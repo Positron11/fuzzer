@@ -100,7 +100,8 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 				depth = 0;
 				strcpy(stack, buffer); // write buffer to stack
 				depth_lock = unlocked;
-			} else {
+
+			} else { // ...otherwise if current token is expandable
 				Rule const* rule = get_rule(grammar, token); // get rule
 
 				// set cost based on recursion limits
