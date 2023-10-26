@@ -114,8 +114,7 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 
 			if (strcmp(token, DEPTH_LOCK_TOKEN) == 0) { // if current token is depth lock token...
 				depth = 0;
-				stack[0] = '\0';
-				stack_ptr = append(stack, buffer); // write buffer to stack
+				OVERRWRITE(stack, stack_ptr, buffer); // write buffer to stack
 				depth_lock = unlocked;
 
 			} else { // ...otherwise if current token is expandable
