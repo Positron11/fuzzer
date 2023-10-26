@@ -160,6 +160,7 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 
 // get expansion from rule
 char const* get_expansion(Rule const* rule, unsigned int cost) {
+	// [TODO) use a faster random number generator (SFMT?)
 	size_t choice = rand() % rule->expansion_count[cost]; // random value between 0 and expansions count for given cost
 	return rule->expansions[cost][choice];
 }
