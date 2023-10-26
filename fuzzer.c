@@ -25,7 +25,7 @@ enum depth_lock_states {unlocked, locking, locked};
 // overrwrite string using append function-like macro
 #define OVERRWRITE(target, ptr, source)				\
 	target[0] = '\0';								\
-	ptr = append(target, source)
+	ptr = append(target, source);
 
 // hashable rule structure
 typedef struct Rule {
