@@ -136,8 +136,8 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 				OVERRWRITE(stack, stack_ptr, get_expansion(rule, cost)); // write random(?) expansion to stack
 
 				if (depth_lock == locking) { // if in locking stage...
-					depth_lock = locked;
 					stack_ptr = append(stack_ptr, DEPTH_LOCK_TOKEN); // ...append lock token to stack
+					depth_lock = locked;
 				}
 
 				stack_ptr = append(stack_ptr, buffer); // append buffer to stack
