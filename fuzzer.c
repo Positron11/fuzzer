@@ -86,6 +86,7 @@ int main(int argc, char const *argv[]) {
 
 // fuzzing function
 void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth) {
+	// [TODO) dynamically allocate stack and output memory
 	// declare stack and output
 	char stack[2097152] = START_TOKEN;
 	char output[2097152];
