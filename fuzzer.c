@@ -96,7 +96,7 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 	char* out_ptr = output;
 
 	// set array "start" values to null
-	stack[strlen(stack)] = '\0';
+	stack[stack_ptr - stack] = '\0';
 	output[0] = '\0';
 
 	// recursion limit variables
@@ -105,12 +105,12 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 	unsigned int depth_lock = 0;
 
 	// while stack not empty
-	while (strlen(stack) > 0) {
+	while ((stack_ptr - stack) > 0) {
 		if (stack[0] == '<') { // if first token in stack indicates nonterminal...
 			// slice token and (remaining) buffer out of stack
 			size_t token_len = strcspn(stack, ">") + 1;
 			SLICE(token, stack, 0, token_len);
-			SLICE(buffer, stack, token_len, strlen(stack));
+			SLICE(buffer, stack, token_len, stack_ptr - stack);
 
 			if (strcmp(token, DEPTH_LOCK_TOKEN) == 0) { // if current token is depth lock token...
 				depth = 0;
@@ -148,7 +148,7 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 			// slice leading nonterminal tokens and (remaining) buffer out of stack
 			size_t term_len = strcspn(stack, "<");
 			SLICE(nonterms, stack, 0, term_len);
-			SLICE(buffer, stack, term_len, strlen(stack));
+			SLICE(buffer, stack, term_len, stack_ptr - stack);
 
 			// append nonterminals to output and write buffer to stack
 			out_ptr = append(out_ptr, nonterms);
