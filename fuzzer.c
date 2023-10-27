@@ -17,15 +17,20 @@
 enum depth_lock_states {unlocked, locking, locked};
 
 // string slice function-like macro
-#define SLICE(target, source, start, end)			\
-	char target[(end - start) + 1];					\
-	memcpy(target, source + start, end - start);	\
+#define SLICE(target, source, start, end)					\
+	char target[(end - start) + 1];							\
+	memcpy(target, source + start, end - start);			\
 	target[end - start] = '\0';
 
+// append to traced string function-like macro
+#define APPEND(target_ptr, source, len)						\
+	memcpy(target_ptr, source, len + 1);					\
+	target_ptr += len;
+
 // overrwrite string using append function-like macro
-#define OVERRWRITE(target, ptr, source)				\
-	target[0] = '\0';								\
-	ptr = append(target, source);
+#define OVERRWRITE(target, target_ptr, source, len)			\
+	target_ptr = target;									\
+	APPEND(target_ptr, source, len);
 
 // hashable rule structure
 typedef struct Rule {
@@ -39,7 +44,6 @@ typedef struct Rule {
 void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth);
 char const* get_expansion(Rule const* rule, unsigned int cost);
 Rule const* get_rule(Rule const* grammar, char* key);
-char* append(char* dest, char const* src);
 
 int main(int argc, char const *argv[]) {
 	srand((unsigned) time(0)); // initialize random
@@ -112,9 +116,11 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 			SLICE(token, stack, 0, token_len);
 			SLICE(buffer, stack, token_len, stack_ptr - stack);
 
+			size_t buffer_len = (stack_ptr - stack) - token_len; // save buffer length for later
+
 			if (strcmp(token, DEPTH_LOCK_TOKEN) == 0) { // if current token is depth lock token...
 				depth = 0;
-				OVERRWRITE(stack, stack_ptr, buffer); // write buffer to stack
+				OVERRWRITE(stack, stack_ptr, buffer, buffer_len); // write buffer to stack
 				depth_lock = unlocked;
 
 			} else { // ...otherwise if current token is expandable
@@ -133,14 +139,15 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 					depth++;
 				}
 
-				OVERRWRITE(stack, stack_ptr, get_expansion(rule, cost)); // write random(?) expansion to stack
+				char const* expansion = get_expansion(rule, cost);
+				OVERRWRITE(stack, stack_ptr, expansion, strlen(expansion)); // write random(?) expansion to stack
 
 				if (depth_lock == locking) { // if in locking stage...
-					stack_ptr = append(stack_ptr, DEPTH_LOCK_TOKEN); // ...append lock token to stack
+					APPEND(stack_ptr, DEPTH_LOCK_TOKEN, 7); // ...append lock token to stack
 					depth_lock = locked;
 				}
 
-				stack_ptr = append(stack_ptr, buffer); // append buffer to stack
+				APPEND(stack_ptr, buffer, buffer_len); // append buffer to stack
 			}
 
 		} else { // ...otherwise if first token in stack is terminal
@@ -149,9 +156,11 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 			SLICE(nonterms, stack, 0, term_len);
 			SLICE(buffer, stack, term_len, stack_ptr - stack);
 
+			size_t buffer_len = (stack_ptr - stack) - term_len; // save buffer length for later
+
 			// append nonterminals to output and write buffer to stack
-			out_ptr = append(out_ptr, nonterms);
-			OVERRWRITE(stack, stack_ptr, buffer);
+			APPEND(out_ptr, nonterms, term_len);
+			OVERRWRITE(stack, stack_ptr, buffer, buffer_len);
 		}
 	}
 
@@ -170,11 +179,4 @@ Rule const* get_rule(Rule const* grammar, char key[]) {
 	Rule* rule = {0};
 	HASH_FIND_INT(grammar, key, rule);
 	return rule;
-}
-
-// more efficiently concatenate strings
-char* append(char* dest, char const* src) {
-     while (*dest) dest++;
-     while (*dest++ = *src++);
-     return --dest;
 }
