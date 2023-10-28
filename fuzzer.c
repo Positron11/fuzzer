@@ -4,26 +4,12 @@
 #include <time.h>
 #include <limits.h>
 
-#define DEPTHLOCK_TOKEN INT_MIN
-#define START_TOKEN DEPTHLOCK_TOKEN + 1
+#define START_TOKEN INT_MIN
 
 // expansion cost definitions
 #define LOW_COST 0
 #define HIGH_COST 1
 #define RAND_COST rand() % 2
-
-// depth lock states
-enum depth_lock_states {unlocked, locking, locked};
-
-// overrwrite stack function-like macro
-#define OVERWRITE(ptr, zero, len, new)			\
-	memcpy(zero, new, len*sizeof(int));			\
-	ptr = zero + len;
-
-// append to stack function-like macro
-#define APPEND(len, ptr, new)					\
-	memcpy(ptr, new, len*sizeof(int));			\
-	ptr += len;
 
 // rule structure
 typedef struct Rule {
@@ -123,7 +109,7 @@ void fuzzer(Grammar* grammar, unsigned int min_depth, unsigned int max_depth, un
 	} else { // ...otherwise if token is nonterminal
 		// calculate cost based on depth and force low if def not recursive
 		unsigned int cost = depth < min_depth ? HIGH_COST : (depth >= max_depth ? LOW_COST : RAND_COST);		
-		cost = (((grammar->definitions)[-(START_TOKEN) + (token)]).rule_count)[1] ? cost : LOW_COST;
+		cost = (((grammar->definitions)[-(START_TOKEN - token)]).rule_count)[1] ? cost : LOW_COST;
 		
 		// get rule and fuzz
 		Rule* rule = get_rule(grammar, token, cost);
@@ -141,6 +127,6 @@ void fuzzer(Grammar* grammar, unsigned int min_depth, unsigned int max_depth, un
 
 // get rule by key
 Rule* get_rule(Grammar* grammar, int def, int cost) {
-	Definition definition = (grammar->definitions)[-(START_TOKEN) + (def)];
+	Definition definition = (grammar->definitions)[-(START_TOKEN - def)];
 	return &((definition.rules)[cost])[rand() % (definition.rule_count)[cost]];
 }
