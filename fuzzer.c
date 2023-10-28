@@ -38,7 +38,7 @@ int main(int argc, char const *argv[]) {
 	srand((unsigned) time(0)); // initialize random
 
 	// define grammar
-	enum special {
+	enum nonterminals {
 		start = START_TOKEN, 
 		phone, 
 		area, 
