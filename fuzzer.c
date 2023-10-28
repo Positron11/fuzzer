@@ -45,7 +45,7 @@ typedef struct Grammar {
 } Grammar;
 
 // function declarations
-void fuzzer(Grammar* grammar, unsigned int min_depth, unsigned int max_depth);
+void fuzzer(Grammar* grammar, unsigned int min_depth, unsigned int max_depth, unsigned int depth, int const* tokens, int token_count);
 Rule* get_rule(Grammar* grammar, int def, int cost);
 
 int main(int argc, char const *argv[]) {
@@ -107,80 +107,36 @@ int main(int argc, char const *argv[]) {
 	
 	// main loop
 	for (size_t i = 0; i < runs; i++) {
-		fuzzer(&grammar, min_depth, max_depth);
+		fuzzer(&grammar, min_depth, max_depth, 0, (int const[]) {START_TOKEN}, 1);
 	}
 
 	return EXIT_SUCCESS;
 }
 
 // fuzzer function
-void fuzzer(Grammar* grammar, unsigned int min_depth, unsigned int max_depth) {
-	// declare stack and output
-	int stack[524288];
-	int output[524288];
+void fuzzer(Grammar* grammar, unsigned int min_depth, unsigned int max_depth, unsigned int depth, int const* tokens, int token_count) {
+	int token = tokens[0]; // get token
 
-	stack[0] = START_TOKEN; // set initial stack value to start token
+	if (token >= 0) { // if token is terminal...
+		putchar(token); // print to stdout
 
-	// set array pointers for efficient concatenation
-	int* stack_ptr = &stack[1];
-	int* out_ptr = output;
-
-	// recursion limit variables
-	unsigned int cost = 0;
-	unsigned int depth = 0;
-	unsigned int depth_lock = 0;
-
-	// while stack not empty
-	while ((stack_ptr - stack) > 0) {
-		int token = stack[0]; // get token
-
-		// get buffer
-		int buffer_len = (stack_ptr - stack) - 1;
-		int buffer[buffer_len];
-		memcpy(buffer, stack + 1, buffer_len*sizeof(int));
+	} else { // ...otherwise if token is nonterminal
+		// calculate cost based on depth and force low if def not recursive
+		unsigned int cost = depth < min_depth ? HIGH_COST : (depth >= max_depth ? LOW_COST : RAND_COST);		
+		cost = (((grammar->definitions)[-(START_TOKEN) + (token)]).rule_count)[1] ? cost : LOW_COST;
 		
-		if (token < 1) { // if first token in stack indicates nonterminal...
-			if (token == DEPTHLOCK_TOKEN) { // if current token is depth lock token...
-				depth = 0;
-				OVERWRITE(stack_ptr, stack, buffer_len, buffer); // overwrite stack with buffer
-				depth_lock = unlocked;
-
-			} else { // ...otherwise if current token is expandable
-				// set cost based on recursion limits
-				if (depth < min_depth) cost = HIGH_COST;
-				else if (depth >= max_depth) cost = LOW_COST;
-				else cost = RAND_COST;
-
-				cost = (((grammar->definitions)[-(START_TOKEN) + (token)]).rule_count)[1] ? cost : LOW_COST; // force low cost if def not recursive
-
-				// increment depth if high cost (recursive) expansion
-				if (cost == HIGH_COST) {
-					if (depth_lock == unlocked) depth_lock = locking;
-					depth++;
-				}
-
-				// overwrite stack with random(?) rule
-				Rule* rule = get_rule(grammar, token, cost);
-				OVERWRITE(stack_ptr, stack, rule->token_count, (rule->tokens));
-
-				if (depth_lock == locking) { // if in locking stage...
-					*(stack_ptr++) = DEPTHLOCK_TOKEN; // ...append lock token to stack
-					depth_lock = locked;
-				}
-
-				APPEND(buffer_len, stack_ptr, buffer); // append buffer to stack
-			}
-		
-		} else { // ...otherwise if first token in stack is terminal
-			memcpy(out_ptr++, (int []) {token}, sizeof(int)); // append token to output
-
-			OVERWRITE(stack_ptr, stack, buffer_len, buffer); // overwrite stack with buffer
-		}
+		// get rule and fuzz
+		Rule* rule = get_rule(grammar, token, cost);
+		fuzzer(grammar, min_depth, max_depth, depth + 1, rule->tokens, rule->token_count);
 	}
 	
-	// print output
-	for (size_t i = 0; i < out_ptr - output; i++) printf("%c", output[i]);
-	printf("\n");
+	// if buffer exists, get buffer and fuzz
+	int buffer_len = token_count - 1;
+	if (buffer_len) {
+		int buffer[buffer_len];
+		memcpy(buffer, tokens + 1, buffer_len*sizeof(int));
+		fuzzer(grammar, min_depth, max_depth, depth, buffer, buffer_len);
+	}
 }
 
 // get rule by key
