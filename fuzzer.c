@@ -11,6 +11,10 @@
 #define HIGH_COST 1
 #define RAND_COST rand() % 2
 
+// get definition function-like macro
+#define GET_DEFINITION(grammar, token)					\
+	(grammar->definitions)[-(START_TOKEN - token)]
+
 // rule structure
 typedef struct Rule {
 	size_t const token_count;
@@ -32,7 +36,7 @@ typedef struct Grammar {
 
 // function declarations
 void fuzzer(Grammar* grammar, unsigned int min_depth, unsigned int max_depth, unsigned int depth, int const* tokens, int token_count);
-Rule const* get_rule(Grammar* grammar, int def, int cost);
+Rule const* get_rule(Grammar* grammar, int token, int cost);
 
 int main(int argc, char const *argv[]) {
 	srand((unsigned) time(0)); // initialize random
@@ -109,7 +113,7 @@ void fuzzer(Grammar* grammar, unsigned int min_depth, unsigned int max_depth, un
 	} else { // ...otherwise if token is nonterminal
 		// calculate cost based on depth and force low if def not recursive
 		unsigned int cost = depth < min_depth ? HIGH_COST : (depth >= max_depth ? LOW_COST : RAND_COST);		
-		cost = (((grammar->definitions)[-(START_TOKEN - token)]).rule_count)[1] ? cost : LOW_COST;
+		cost = GET_DEFINITION(grammar, token).rule_count[1] ? cost : LOW_COST;
 		
 		// get rule and fuzz
 		Rule const* rule = get_rule(grammar, token, cost);
@@ -126,7 +130,7 @@ void fuzzer(Grammar* grammar, unsigned int min_depth, unsigned int max_depth, un
 }
 
 // get rule by key
-Rule const* get_rule(Grammar* grammar, int def, int cost) {
-	Definition definition = (grammar->definitions)[-(START_TOKEN - def)];
+Rule const* get_rule(Grammar* grammar, int token, int cost) {
+	Definition definition = GET_DEFINITION(grammar, token);
 	return &((definition.rules)[cost])[rand() % (definition.rule_count)[cost]];
 }
