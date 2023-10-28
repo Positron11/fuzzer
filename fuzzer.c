@@ -16,6 +16,16 @@
 // computed definitions
 #define STACK_LEN stack_ptr - stack
 
+// append function-like macro
+#define APPEND(target_ptr, source, len)					\
+	memcpy(target_ptr, source, len * sizeof(int));		\
+	target_ptr += len;
+
+// overrwrite function-like macro
+#define OVERWRITE(target, target_ptr, source, len)		\
+	target_ptr = target;								\
+	APPEND(target_ptr, source, len);
+
 // depth lock states
 enum depth_lock_states {unlocked, locking, locked};
 
@@ -139,10 +149,7 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 				depth = 0;
 				depth_lock = unlocked;
 
-				// overrwrite stack with buffer
-				stack_ptr = stack;
-				memcpy(stack_ptr, buffer, buffer_len * sizeof(int));
-				stack_ptr += buffer_len;
+				OVERWRITE(stack, stack_ptr, buffer, buffer_len); // overrwrite stack with buffer
 
 			} else { // ...otherwise if token is rule
 				Definition const* definition = &grammar->definitions[-(START_TOKEN - token)]; // get definition
@@ -159,28 +166,20 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 
 				Rule const* rule = get_rule(definition, cost); // get rule
 
-				// overrwrite stack with rule tokens
-				stack_ptr = stack;
-				memcpy(stack_ptr, rule->tokens, rule->token_count * sizeof(int));
-				stack_ptr += rule->token_count;
+				OVERWRITE(stack, stack_ptr, rule->tokens, rule->token_count); // overrwrite stack with rule tokens
 
 				if (depth_lock == locking) { // if in locking stage...
 					*(stack_ptr++) = DEPTHLOCK_TOKEN; // ...append lock token to stack
 					depth_lock = locked;
 				}
 
-				// append buffer to stack
-				memcpy(stack_ptr, buffer, buffer_len * sizeof(int));
-				stack_ptr += buffer_len;
+				APPEND(stack_ptr, buffer, buffer_len); // append buffer to stack
 			}
 
 		} else { // ...otherwise if token is terminal
 			*(out_ptr++) = token; // append token to output
 
-			// overrwrite stack with buffer
-			stack_ptr = stack;
-			memcpy(stack_ptr, buffer, buffer_len * sizeof(int));
-			stack_ptr += buffer_len;
+			OVERWRITE(stack, stack_ptr, buffer, buffer_len); // overrwrite stack with buffer
 		}
 	}
 
