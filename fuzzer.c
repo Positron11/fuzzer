@@ -13,6 +13,9 @@
 #define HIGH_COST 1
 #define RAND_COST rand() % 2
 
+// computed definitions
+#define STACK_LEN stack_ptr - stack
+
 // depth lock states
 enum depth_lock_states {unlocked, locking, locked};
 
@@ -100,7 +103,7 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 	char* out_ptr = output;
 
 	// set array "start" values to null
-	stack[stack_ptr - stack] = '\0';
+	stack[STACK_LEN] = '\0';
 	output[0] = '\0';
 
 	// recursion limit variables
@@ -109,14 +112,14 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 	unsigned int depth_lock = 0;
 
 	// while stack not empty
-	while ((stack_ptr - stack) > 0) {
+	while (STACK_LEN > 0) {
 		if (stack[0] == '<') { // if first token in stack indicates nonterminal...
 			// slice token and (remaining) buffer out of stack
 			size_t token_len = strcspn(stack, ">") + 1;
 			SLICE(token, stack, 0, token_len);
-			SLICE(buffer, stack, token_len, stack_ptr - stack);
+			SLICE(buffer, stack, token_len, STACK_LEN);
 
-			size_t buffer_len = (stack_ptr - stack) - token_len; // save buffer length for later
+			size_t buffer_len = STACK_LEN - token_len; // save buffer length for later
 
 			if (strcmp(token, DEPTH_LOCK_TOKEN) == 0) { // if current token is depth lock token...
 				depth = 0;
@@ -154,9 +157,9 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 			// slice leading nonterminal tokens and (remaining) buffer out of stack
 			size_t term_len = strcspn(stack, "<");
 			SLICE(nonterms, stack, 0, term_len);
-			SLICE(buffer, stack, term_len, stack_ptr - stack);
+			SLICE(buffer, stack, term_len, STACK_LEN);
 
-			size_t buffer_len = (stack_ptr - stack) - term_len; // save buffer length for later
+			size_t buffer_len = STACK_LEN - term_len; // save buffer length for later
 
 			// append nonterminals to output and write buffer to stack
 			APPEND(out_ptr, nonterms, term_len);
