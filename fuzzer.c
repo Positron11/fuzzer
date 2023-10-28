@@ -4,62 +4,52 @@
 #include <time.h>
 #include <limits.h>
 
-#define DEPTHLOCK_TOKEN INT_MIN
-#define START_TOKEN DEPTHLOCK_TOKEN + 1
+// token definitions
+#define DEPTHLOCK_TOKEN -100
+#define START_TOKEN -100 + 1
 
-// expansion cost definitions
+// cost definitions
 #define LOW_COST 0
 #define HIGH_COST 1
 #define RAND_COST rand() % 2
 
+// computed definitions
+#define STACK_LEN stack_ptr - stack
+
 // depth lock states
 enum depth_lock_states {unlocked, locking, locked};
 
-// overrwrite stack function-like macro
-#define OVERWRITE(ptr, zero, len, new)			\
-	memcpy(zero, new, len*sizeof(int));			\
-	ptr = zero + len;
-
-// append to stack function-like macro
-#define APPEND(len, ptr, new)					\
-	memcpy(ptr, new, len*sizeof(int));			\
-	ptr += len;
-
 // rule structure
 typedef struct Rule {
-	size_t token_count;
+	size_t const token_count;
 	int const* tokens;
 } Rule;
 
 // definition structure
 typedef struct Definition {
 	char const* name;
-	size_t rule_count[2];
-	Rule* rules[2]; // [0]: cheap, [1]: costly
+	size_t const rule_count[2];
+	Rule const* rules[2]; // [0]: cheap, [1]: costly
 } Definition;
 
 // grammar structure
 typedef struct Grammar {
-	size_t def_count;
-	Definition* definitions;
+	size_t const def_count;
+	Definition const* definitions;
 } Grammar;
 
 // function declarations
-void fuzzer(Grammar* grammar, unsigned int min_depth, unsigned int max_depth);
-Rule* get_rule(Grammar* grammar, int def, int cost);
+void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_depth);
+Rule const* get_rule(Definition const* definition, int cost);
 
 int main(int argc, char const *argv[]) {
 	srand((unsigned) time(0)); // initialize random
 
+	// generate nonterminal tokens
+	enum special {start = START_TOKEN, phone, area, number, digit};
+
 	// define grammar
-	enum special {
-		start = START_TOKEN, 
-		phone, 
-		area, 
-		number, 
-		digit,
-	};
-	Grammar grammar = { .def_count=5, .definitions=(Definition []) {
+	Grammar const grammar = { .def_count=5, .definitions=(Definition []) {
 		(Definition) { .name="start", .rule_count={1, 0}, .rules={
 			(Rule []) {
 				(Rule) { .token_count=1, .tokens=(int const[]) {phone} }
@@ -113,15 +103,20 @@ int main(int argc, char const *argv[]) {
 	return EXIT_SUCCESS;
 }
 
+void log_arr(int arr[], int len) {
+	for (size_t i = 0; i < len; i++) printf("%d | ", arr[i]);
+	putchar('\n');
+}
+
 // fuzzer function
-void fuzzer(Grammar* grammar, unsigned int min_depth, unsigned int max_depth) {
+void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_depth) {
 	// declare stack and output
-	int stack[524288];
-	int output[524288];
+	int stack[262144];
+	int output[262144];
 
-	stack[0] = START_TOKEN; // set initial stack value to start token
+	stack[0] = START_TOKEN; // initialize stack
 
-	// set array pointers for efficient concatenation
+	// declare chaser pointers for efficient stack modifications
 	int* stack_ptr = &stack[1];
 	int* out_ptr = output;
 
@@ -130,61 +125,69 @@ void fuzzer(Grammar* grammar, unsigned int min_depth, unsigned int max_depth) {
 	unsigned int depth = 0;
 	unsigned int depth_lock = 0;
 
-	// while stack not empty
-	while ((stack_ptr - stack) > 0) {
+	while (STACK_LEN > 0) {
 		int token = stack[0]; // get token
-
-		// get buffer
-		int buffer_len = (stack_ptr - stack) - 1;
-		int buffer[buffer_len];
-		memcpy(buffer, stack + 1, buffer_len*sizeof(int));
 		
-		if (token < 1) { // if first token in stack indicates nonterminal...
-			if (token == DEPTHLOCK_TOKEN) { // if current token is depth lock token...
+		// get buffer
+		int buffer_len = STACK_LEN - 1;
+		int buffer[buffer_len];
+		memcpy(buffer, stack + 1, buffer_len * sizeof(int));
+		
+		if (token < 0) { // if token is nonterminal...
+			if (token == DEPTHLOCK_TOKEN) { // if token is depthlock token...
+				// reset depth lock vars
 				depth = 0;
-				OVERWRITE(stack_ptr, stack, buffer_len, buffer); // overwrite stack with buffer
 				depth_lock = unlocked;
 
-			} else { // ...otherwise if current token is expandable
-				// set cost based on recursion limits
-				if (depth < min_depth) cost = HIGH_COST;
-				else if (depth >= max_depth) cost = LOW_COST;
-				else cost = RAND_COST;
+				// overrwrite stack with buffer
+				stack_ptr = stack;
+				memcpy(stack_ptr, buffer, buffer_len * sizeof(int));
+				stack_ptr += buffer_len;
 
-				cost = (((grammar->definitions)[-(START_TOKEN) + (token)]).rule_count)[1] ? cost : LOW_COST; // force low cost if def not recursive
-
+			} else { // ...otherwise if token is rule
+				Definition const* definition = &grammar->definitions[-(START_TOKEN - token)]; // get definition
+				
+				// calculate cost based on depth and force low if definition not recursive
+				unsigned int cost = depth < min_depth ? HIGH_COST : (depth >= max_depth ? LOW_COST : RAND_COST);
+				cost = definition->rule_count[1] ? cost : LOW_COST;
+				
 				// increment depth if high cost (recursive) expansion
 				if (cost == HIGH_COST) {
 					if (depth_lock == unlocked) depth_lock = locking;
 					depth++;
 				}
 
-				// overwrite stack with random(?) rule
-				Rule* rule = get_rule(grammar, token, cost);
-				OVERWRITE(stack_ptr, stack, rule->token_count, (rule->tokens));
+				Rule const* rule = get_rule(definition, cost); // get rule
+
+				// overrwrite stack with rule tokens
+				stack_ptr = stack;
+				memcpy(stack_ptr, rule->tokens, rule->token_count * sizeof(int));
+				stack_ptr += rule->token_count;
 
 				if (depth_lock == locking) { // if in locking stage...
 					*(stack_ptr++) = DEPTHLOCK_TOKEN; // ...append lock token to stack
 					depth_lock = locked;
 				}
 
-				APPEND(buffer_len, stack_ptr, buffer); // append buffer to stack
+				// append buffer to stack
+				memcpy(stack_ptr, buffer, buffer_len * sizeof(int));
+				stack_ptr += buffer_len;
 			}
-		
-		} else { // ...otherwise if first token in stack is terminal
-			memcpy(out_ptr++, (int []) {token}, sizeof(int)); // append token to output
 
-			OVERWRITE(stack_ptr, stack, buffer_len, buffer); // overwrite stack with buffer
+		} else { // ...otherwise if token is terminal
+			*(out_ptr++) = token; // append token to output
+
+			// overrwrite stack with buffer
+			stack_ptr = stack;
+			memcpy(stack_ptr, buffer, buffer_len * sizeof(int));
+			stack_ptr += buffer_len;
 		}
 	}
-	
-	// print output
-	for (size_t i = 0; i < out_ptr - output; i++) printf("%c", output[i]);
-	printf("\n");
+
+	for (size_t i = 0; i < out_ptr - output; i++) putchar(output[i]);
 }
 
-// get rule by key
-Rule* get_rule(Grammar* grammar, int def, int cost) {
-	Definition definition = (grammar->definitions)[-(START_TOKEN) + (def)];
-	return &((definition.rules)[cost])[rand() % (definition.rule_count)[cost]];
+// get rule from definition
+Rule const* get_rule(Definition const* definition, int cost) {
+	return &definition->rules[cost][rand() % (definition->rule_count)[cost]];
 }
