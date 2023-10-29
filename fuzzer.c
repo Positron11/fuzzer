@@ -113,11 +113,6 @@ int main(int argc, char const *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-void log_arr(int arr[], int len) {
-	for (size_t i = 0; i < len; i++) printf("%d | ", arr[i]);
-	putchar('\n');
-}
-
 // fuzzer function
 void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_depth) {
 	// declare stack and output
