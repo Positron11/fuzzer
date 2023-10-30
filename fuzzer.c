@@ -131,12 +131,15 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 	unsigned int depth = 0;
 	unsigned int depth_lock = 0;
 
+	// declare buffer store
+	int* buffer = malloc(sizeof(int));
+
 	while (STACK_LEN > 0) {
 		int token = stack[0]; // get token
 		
 		// get buffer
 		int buffer_len = STACK_LEN - 1;
-		int buffer[buffer_len];
+		buffer = realloc(buffer, buffer_len * sizeof(int));
 		memcpy(buffer, stack + 1, buffer_len * sizeof(int));
 		
 		if (token < 0) { // if token is nonterminal...
