@@ -94,13 +94,16 @@ int main(int argc, char const *argv[]) {
 // fuzzing function
 void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_depth) {
 	// [TODO) dynamically allocate stack and output memory
-	// declare and initialize stack and output
-	char stack[2097152] = START_TOKEN;
-	char output[2097152];
+	// declare stack and output
+	char* stack = malloc(2097152 * sizeof(char));
+	char* output = malloc(2097152 * sizeof(char));
 
 	// set array pointers for efficient concatenation
-	char* stack_ptr = &stack[strlen(stack)];
+	char* stack_ptr = stack;
 	char* out_ptr = output;
+
+	// initialize stack
+	OVERRWRITE(stack, stack_ptr, START_TOKEN, strlen(START_TOKEN));
 
 	// recursion limit variables
 	unsigned int cost = 0;
