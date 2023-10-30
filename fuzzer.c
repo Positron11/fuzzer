@@ -17,19 +17,19 @@
 #define STACK_LEN stack_ptr - stack
 
 // string slice function-like macro
-#define SLICE(target, source, start, end)					\
-	char target[(end - start) + 1];							\
-	memcpy(target, source + start, end - start);			\
+#define SLICE(target, source, start, end)								\
+	target = realloc(target, ((end - start) + 1) * sizeof(char));		\
+	memcpy(target, source + start, end - start);						\
 	target[end - start] = '\0';
 
 // append to traced string function-like macro
-#define APPEND(target_ptr, source, len)						\
-	memcpy(target_ptr, source, len + 1);					\
+#define APPEND(target_ptr, source, len)									\
+	memcpy(target_ptr, source, len + 1);								\
 	target_ptr += len;
 
 // overrwrite string using append function-like macro
-#define OVERRWRITE(target, target_ptr, source, len)			\
-	target_ptr = target;									\
+#define OVERRWRITE(target, target_ptr, source, len)						\
+	target_ptr = target;												\
 	APPEND(target_ptr, source, len);
 
 // depth lock states
@@ -109,6 +109,11 @@ void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_
 	unsigned int cost = 0;
 	unsigned int depth = 0;
 	unsigned int depth_lock = 0;
+
+	// declare token, nonterms, and buffer stores
+	char* token = malloc(sizeof(char));
+	char* nonterms = malloc(sizeof(char));
+	char* buffer = malloc(sizeof(char));
 
 	// while stack not empty
 	while (STACK_LEN > 0) {
