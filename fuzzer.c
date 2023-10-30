@@ -102,10 +102,6 @@ void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_
 	char* stack_ptr = &stack[strlen(stack)];
 	char* out_ptr = output;
 
-	// set array "start" values to null
-	stack[STACK_LEN] = '\0';
-	output[0] = '\0';
-
 	// recursion limit variables
 	unsigned int cost = 0;
 	unsigned int depth = 0;
