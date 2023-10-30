@@ -116,14 +116,15 @@ int main(int argc, char const *argv[]) {
 // fuzzer function
 void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_depth) {
 	// declare stack and output
-	int stack[262144];
-	int output[262144];
-
-	stack[0] = START_TOKEN; // initialize stack
+	int* stack = malloc(2097152 * sizeof(int));
+	int* output = malloc(2097152 * sizeof(int));
 
 	// declare chaser pointers for efficient stack modifications
-	int* stack_ptr = &stack[1];
+	int* stack_ptr = stack;
 	int* out_ptr = output;
+
+	// initialize stack
+	*(stack_ptr++) = START_TOKEN;
 
 	// recursion limit variables
 	unsigned int cost = 0;
