@@ -16,9 +16,6 @@
 // computed definitions
 #define STACK_LEN stack_ptr - stack
 
-// depth lock states
-enum depth_lock_states {unlocked, locking, locked};
-
 // string slice function-like macro
 #define SLICE(target, source, start, end)					\
 	char target[(end - start) + 1];							\
@@ -35,39 +32,42 @@ enum depth_lock_states {unlocked, locking, locked};
 	target_ptr = target;									\
 	APPEND(target_ptr, source, len);
 
+// depth lock states
+enum depth_lock_states {unlocked, locking, locked};
+
 // hashable rule structure
-typedef struct Rule {
+typedef struct Definition {
 	char const key[32]; // uthash hashtable key
-	size_t const expansion_count[2]; // count of expansion options
-	char const** expansions[2]; // expansion options ([0]: cheap, [1]: costly)
+	size_t const rule_count[2]; // count of expansion options
+	char const** rules[2]; // expansion options ([0]: cheap, [1]: costly)
 	UT_hash_handle hh;
-} Rule;
+} Definition;
 
 // declare functions
-void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth);
-char const* get_expansion(Rule const* rule, unsigned int cost);
-Rule const* get_rule(Rule const* grammar, char* key);
+void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_depth);
+char const* get_rule(Definition const* rule, unsigned int cost);
+Definition const* get_definition(Definition const* grammar, char* key);
 
 int main(int argc, char const *argv[]) {
 	srand((unsigned) time(0)); // initialize random
 
-	Rule const* grammar = {0}; // declare grammar as pointers to rules
+	Definition const* grammar = {0}; // declare grammar as pointers to rules
 
 	// define grammar rules
-	Rule start = { .key=START_TOKEN, .expansion_count={1,0}, .expansions={ 
+	Definition start = { .key=START_TOKEN, .rule_count={1,0}, .rules={ 
 		(char const*[]) {"<phone>"},
 	} };
-	Rule phone = { .key="<phone>", .expansion_count={2,0}, .expansions={ 
+	Definition phone = { .key="<phone>", .rule_count={2,0}, .rules={ 
 		(char const*[]) {"<area><number>-<number>", "<number>-<number>"},
 	} };	
-	Rule area = { .key="<area>", .expansion_count={1,0}, .expansions={ 
+	Definition area = { .key="<area>", .rule_count={1,0}, .rules={ 
 		(char const*[]) {"(+<digit><digit>)"},
 	} };
-	Rule number = { .key="<number>", .expansion_count={1,1}, .expansions={ 
+	Definition number = { .key="<number>", .rule_count={1,1}, .rules={ 
 		(char const*[]) {"<digit>"},
 		(char const*[]) {"<digit><number>"},
 	} };
-	Rule digit = { .key="<digit>", .expansion_count={10,0}, .expansions={ 
+	Definition digit = { .key="<digit>", .rule_count={10,0}, .rules={ 
 		(char const*[]) {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"},
 	} };
 	
@@ -92,9 +92,9 @@ int main(int argc, char const *argv[]) {
 }
 
 // fuzzing function
-void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth) {
+void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_depth) {
 	// [TODO) dynamically allocate stack and output memory
-	// declare stack and output
+	// declare and initialize stack and output
 	char stack[2097152] = START_TOKEN;
 	char output[2097152];
 
@@ -118,23 +118,20 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 			size_t token_len = strcspn(stack, ">") + 1;
 			SLICE(token, stack, 0, token_len);
 			SLICE(buffer, stack, token_len, STACK_LEN);
-
 			size_t buffer_len = STACK_LEN - token_len; // save buffer length for later
 
 			if (strcmp(token, DEPTH_LOCK_TOKEN) == 0) { // if current token is depth lock token...
 				depth = 0;
-				OVERRWRITE(stack, stack_ptr, buffer, buffer_len); // write buffer to stack
 				depth_lock = unlocked;
 
+				OVERRWRITE(stack, stack_ptr, buffer, buffer_len); // write buffer to stack
+
 			} else { // ...otherwise if current token is expandable
-				Rule const* rule = get_rule(grammar, token); // get rule
+				Definition const* definition = get_definition(grammar, token); // get definition
 
-				// set cost based on recursion limits
-				if (depth < min_depth) cost = HIGH_COST;
-				else if (depth >= max_depth) cost = LOW_COST;
-				else cost = RAND_COST;
-
-				cost = rule->expansion_count[1] ? cost : LOW_COST; // force low cost if rule not recursive
+				// calculate cost based on depth and force low if definition not recursive
+				unsigned int cost = depth < min_depth ? HIGH_COST : (depth >= max_depth ? LOW_COST : RAND_COST);
+				cost = definition->rule_count[1] ? cost : LOW_COST;
 
 				// increment depth if high cost (recursive) expansion
 				if (cost == HIGH_COST) {
@@ -142,8 +139,9 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 					depth++;
 				}
 
-				char const* expansion = get_expansion(rule, cost);
-				OVERRWRITE(stack, stack_ptr, expansion, strlen(expansion)); // write random(?) expansion to stack
+				char const* rule = get_rule(definition, cost); // get rule
+
+				OVERRWRITE(stack, stack_ptr, rule, strlen(rule)); // write random(?) expansion to stack
 
 				if (depth_lock == locking) { // if in locking stage...
 					APPEND(stack_ptr, DEPTH_LOCK_TOKEN, 7); // ...append lock token to stack
@@ -170,16 +168,16 @@ void fuzzer(Rule const* grammar, unsigned int min_depth, unsigned int max_depth)
 	printf("%s\n", output); // print output
 }
 
-// get expansion from rule
-char const* get_expansion(Rule const* rule, unsigned int cost) {
+// get rule from definition
+char const* get_rule(Definition const* definition, unsigned int cost) {
 	// [TODO) use a faster random number generator (SFMT?)
-	size_t choice = rand() % rule->expansion_count[cost]; // random value between 0 and expansions count for given cost
-	return rule->expansions[cost][choice];
+	size_t choice = rand() % definition->rule_count[cost]; // random value between 0 and rule count for given cost
+	return definition->rules[cost][choice];
 }
 
-// get rule from grammar
-Rule const* get_rule(Rule const* grammar, char key[]) {
-	Rule* rule = {0};
-	HASH_FIND_INT(grammar, key, rule);
-	return rule;
+// get definition from grammar
+Definition const* get_definition(Definition const* grammar, char key[]) {
+	Definition* definition = {0};
+	HASH_FIND_INT(grammar, key, definition);
+	return definition;
 }
