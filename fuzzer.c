@@ -16,21 +16,10 @@
 // computed definitions
 #define STACK_LEN stack_ptr - stack
 
-// string slice function-like macro
-#define SLICE(target, source, start, end)								\
-	target = realloc(target, ((end - start) + 1) * sizeof(char));		\
-	memcpy(target, source + start, end - start);						\
-	target[end - start] = '\0';
-
-// append to traced string function-like macro
-#define APPEND(target_ptr, source, len)									\
-	memcpy(target_ptr, source, len + 1);								\
-	target_ptr += len;
-
 // overrwrite string using append function-like macro
 #define OVERRWRITE(target, target_ptr, source, len)						\
 	target_ptr = target;												\
-	APPEND(target_ptr, source, len);
+	target_ptr = append(target_ptr, source, len);
 
 // depth lock states
 enum depth_lock_states {unlocked, locking, locked};
@@ -47,6 +36,8 @@ typedef struct Definition {
 void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_depth);
 char const* get_rule(Definition const* rule, unsigned int cost);
 Definition const* get_definition(Definition const* grammar, char* key);
+char* append(char* target_ptr, char const source[], size_t len);
+void slice(char target[], char const source[], size_t start, size_t end);
 
 int main(int argc, char const *argv[]) {
 	srand((unsigned) time(0)); // initialize random
@@ -120,8 +111,8 @@ void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_
 		if (stack[0] == '<') { // if first token in stack indicates nonterminal...
 			// slice token and (remaining) buffer out of stack
 			size_t token_len = strcspn(stack, ">") + 1;
-			SLICE(token, stack, 0, token_len);
-			SLICE(buffer, stack, token_len, STACK_LEN);
+			slice(token, stack, 0, token_len);
+			slice(buffer, stack, token_len, STACK_LEN);
 			size_t buffer_len = STACK_LEN - token_len; // save buffer length for later
 
 			if (strcmp(token, DEPTH_LOCK_TOKEN) == 0) { // if current token is depth lock token...
@@ -148,23 +139,23 @@ void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_
 				OVERRWRITE(stack, stack_ptr, rule, strlen(rule)); // write random(?) expansion to stack
 
 				if (depth_lock == locking) { // if in locking stage...
-					APPEND(stack_ptr, DEPTH_LOCK_TOKEN, 7); // ...append lock token to stack
+					stack_ptr = append(stack_ptr, DEPTH_LOCK_TOKEN, 7); // ...append lock token to stack
 					depth_lock = locked;
 				}
 
-				APPEND(stack_ptr, buffer, buffer_len); // append buffer to stack
+				stack_ptr = append(stack_ptr, buffer, buffer_len); // append buffer to stack
 			}
 
 		} else { // ...otherwise if first token in stack is terminal
 			// slice leading nonterminal tokens and (remaining) buffer out of stack
 			size_t term_len = strcspn(stack, "<");
-			SLICE(nonterms, stack, 0, term_len);
-			SLICE(buffer, stack, term_len, STACK_LEN);
+			slice(nonterms, stack, 0, term_len);
+			slice(buffer, stack, term_len, STACK_LEN);
 
 			size_t buffer_len = STACK_LEN - term_len; // save buffer length for later
 
 			// append nonterminals to output and write buffer to stack
-			APPEND(out_ptr, nonterms, term_len);
+			out_ptr = append(out_ptr, nonterms, term_len);
 			OVERRWRITE(stack, stack_ptr, buffer, buffer_len);
 		}
 	}
@@ -184,4 +175,17 @@ Definition const* get_definition(Definition const* grammar, char key[]) {
 	Definition* definition = {0};
 	HASH_FIND_INT(grammar, key, definition);
 	return definition;
+}
+
+// get string segment
+void slice(char target[], char const source[], size_t start, size_t end) {
+	target = realloc(target, ((end - start) + 1) * sizeof(char));
+	memcpy(target, source + start, end - start);
+	target[end - start] = '\0';
+}
+
+// append to traced string
+char* append(char* target_ptr, char const source[], size_t len) {
+	memcpy(target_ptr, source, len + 1);
+	return target_ptr + len;
 }
