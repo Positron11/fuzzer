@@ -37,6 +37,7 @@ char const* get_rule(Definition const* rule, unsigned int cost);
 Definition const* get_definition(Definition const* grammar, char* key);
 char* append(char* target_ptr, char const source[], size_t len);
 void slice(char target[], char const source[], size_t start, size_t end);
+char* prepend(char target[], char* target_ptr, char const source[], size_t target_len, size_t source_len);
 
 int main(int argc, char const *argv[]) {
 	srand((unsigned) time(0)); // initialize random
@@ -100,29 +101,25 @@ void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_
 	unsigned int recursion_lock_status = 0;
 
 	// declare token, terminals, and buffer stores
-	char* token = malloc(2097152 * sizeof(char));
-	char* terminals = malloc(2097152 * sizeof(char));
-	char* buffer = malloc(2097152 * sizeof(char));
+	char* tokens = malloc(2097152 * sizeof(char));
 
 	// while stack not empty
 	while (STACK_LEN > 0) {
 		if (stack[0] == '<') { // if first token in stack indicates nonterminal...
-			// slice token and (remaining) buffer out of stack
+			// slice token out of stack
 			size_t token_len = strcspn(stack, ">") + 1;
-			slice(token, stack, 0, token_len);
-			slice(buffer, stack, token_len, STACK_LEN);
+			slice(tokens, stack, 0, token_len);
 			
-			size_t buffer_len = STACK_LEN - token_len; // save buffer length for later
+			size_t buffer_len = STACK_LEN - token_len; // get buffer length
+			OVERRWRITE(stack, stack_ptr, &stack[token_len], buffer_len); // write buffer to stack
 
-			if (strcmp(token, DEPTH_LOCK_TOKEN) == 0) { // if current token is depth lock token...
-				OVERRWRITE(stack, stack_ptr, &stack[token_len], buffer_len); // write buffer to stack
-				
+			if (strcmp(tokens, DEPTH_LOCK_TOKEN) == 0) { // if current token is depth lock token...
 				// reset depth lock vars
 				recursion_lock_status = unlocked;
 				depth = 0;
 
 			} else { // ...otherwise if current token is expandable
-				Definition const* definition = get_definition(grammar, token); // get definition
+				Definition const* definition = get_definition(grammar, tokens); // get definition
 
 				// calculate cost based on depth and force low if definition not recursive
 				unsigned int cost = depth < min_depth ? HIGH_COST : (depth >= max_depth ? LOW_COST : RAND_COST);
@@ -136,25 +133,22 @@ void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_
 
 				char const* rule = get_rule(definition, cost); // get rule
 
-				OVERRWRITE(stack, stack_ptr, rule, strlen(rule)); // write rule to stack
-
 				if (recursion_lock_status == locking) { // if in locking stage...
-					stack_ptr = append(stack_ptr, DEPTH_LOCK_TOKEN, 7); // ...append lock token to stack
+					stack_ptr = prepend(stack, stack_ptr, DEPTH_LOCK_TOKEN, STACK_LEN, strlen(DEPTH_LOCK_TOKEN)); // ...prepend lock token to stack
 					recursion_lock_status = locked;
 				}
 
-				stack_ptr = append(stack_ptr, buffer, buffer_len); // append buffer to stack
+				stack_ptr = prepend(stack, stack_ptr, rule, STACK_LEN, strlen(rule)); // prepend rule to stack
 			}
 
 		} else { // ...otherwise if first token in stack is terminal
-			// slice leading nonterminal tokens and (remaining) buffer out of stack
+			// slice leading nonterminal tokens out of stack
 			size_t terminals_len = strcspn(stack, "<");
-			slice(terminals, stack, 0, terminals_len);
-
-			size_t buffer_len = STACK_LEN - terminals_len; // save buffer length for later
+			slice(tokens, stack, 0, terminals_len);
 
 			// append terminals to output and write buffer to stack
-			out_ptr = append(out_ptr, terminals, terminals_len);
+			out_ptr = append(out_ptr, tokens, terminals_len);
+			size_t buffer_len = STACK_LEN - terminals_len;  // get buffer length
 			OVERRWRITE(stack, stack_ptr, &stack[terminals_len], buffer_len);
 		}
 	}
@@ -185,6 +179,13 @@ void slice(char target[], char const source[], size_t start, size_t end) {
 
 // append to traced string
 char* append(char* target_ptr, char const source[], size_t len) {
-	memcpy(target_ptr, source, (len + 1) * sizeof(char));
+	memmove(target_ptr, source, (len + 1) * sizeof(char));
 	return target_ptr + len;
+}
+
+// prepend to traced string
+char* prepend(char target[], char* target_ptr, char const source[], size_t target_len, size_t source_len) {
+	memmove(&target[source_len], target, (target_len + 1) * sizeof(char));
+	memcpy(target, source, source_len);
+	return target + source_len + target_len;
 }
