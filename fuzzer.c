@@ -43,6 +43,7 @@ enum nonterminals {start = SCHAR_MIN, phone, area, number, digit, depthlock}; //
 void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_depth);
 Rule const* get_rule(Definition const* definition, int cost);
 signed char* append(signed char* target_ptr, signed char const source[], size_t len);
+signed char* prepend(signed char target[], signed char* target_ptr, signed char const source[], size_t target_len, size_t source_len);
 
 int main(int argc, char const *argv[]) {
 	srand((unsigned) time(0)); // initialize random
@@ -124,10 +125,10 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 		signed char token = stack[0]; // get token
 		
 		int buffer_len = STACK_LEN - 1; // get buffer length
+		OVERWRITE(stack, stack_ptr, &stack[1], buffer_len); // overrwrite stack with buffer
 		
 		if (token < 0) { // if token is nonterminal...
 			if (token == depthlock) { // if token is depthlock token...
-				OVERWRITE(stack, stack_ptr, &stack[1], buffer_len); // overrwrite stack with buffer
 				
 				// reset depth lock vars
 				recursion_lock_state = unlocked;
@@ -148,24 +149,16 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 
 				Rule const* rule = get_rule(definition, cost); // get rule
 
-				// calculate buffer shift and shift buffer up to make room for rule
-				size_t shift = rule->token_count + (recursion_lock_state == locking);
-				memmove(&stack[shift], &stack[1], buffer_len * sizeof(signed char));
-				
-				OVERWRITE(stack, stack_ptr, rule->tokens, rule->token_count); // overrwrite stack with rule tokens
-
 				if (recursion_lock_state == locking) { // if in locking stage...
-					*(stack_ptr++) = depthlock; // ...append lock token to stack
+					stack_ptr = prepend(stack, stack_ptr, (signed char []) {depthlock}, STACK_LEN, 1); // prepend depthlock token to stack
 					recursion_lock_state = locked;
 				}
 
-				stack_ptr = stack + shift + buffer_len; // move stack pointer to end of stack
+				stack_ptr = prepend(stack, stack_ptr, rule->tokens, STACK_LEN, rule->token_count); // prepend rule to stack
 			}
 
 		} else { // ...otherwise if token is terminal
 			*(out_ptr++) = token; // append token to output
-			
-			OVERWRITE(stack, stack_ptr, &stack[1], buffer_len); // overrwrite stack with buffer
 		}
 	}
 
@@ -177,8 +170,15 @@ Rule const* get_rule(Definition const* definition, int cost) {
 	return &definition->rules[cost][rand() % (definition->rule_count)[cost]];
 }
 
-// append function
+// append to token array
 signed char* append(signed char* target_ptr, signed char const source[], size_t len) {
 	memmove(target_ptr, source, len * sizeof(signed char));
 	return target_ptr + len;
+}
+
+// prepend to token array
+signed char* prepend(signed char target[], signed char* target_ptr, signed char const source[], size_t target_len, size_t source_len) {
+	memmove(&target[source_len], target, target_len * sizeof(signed char));
+	memcpy(target, source, source_len);
+	return target + source_len + target_len;
 }
