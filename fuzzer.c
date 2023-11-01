@@ -27,7 +27,7 @@ enum depth_lock_states {unlocked, locking, locked};
 // rule structure
 typedef struct Rule {
 	size_t const token_count;
-	int const* tokens;
+	signed char const* tokens;
 } Rule;
 
 // definition structure
@@ -46,7 +46,7 @@ typedef struct Grammar {
 // function declarations
 void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_depth);
 Rule const* get_rule(Definition const* definition, int cost);
-int* append(int* target_ptr, int const source[], size_t len);
+signed char* append(signed char* target_ptr, signed char const source[], size_t len);
 
 int main(int argc, char const *argv[]) {
 	srand((unsigned) time(0)); // initialize random
@@ -58,40 +58,40 @@ int main(int argc, char const *argv[]) {
 	Grammar const grammar = { .def_count=5, .definitions=(Definition []) {
 		(Definition) { .name="start", .rule_count={1, 0}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=1, .tokens=(int const[]) {phone} }
+				(Rule) { .token_count=1, .tokens=(signed char const[]) {phone} }
 			}
 		} },
 		(Definition) { .name="phone", .rule_count={2, 0}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=3, .tokens=(int const[]){number, '-', number} },
-				(Rule) { .token_count=4, .tokens=(int const[]){area, number, '-', number} }
+				(Rule) { .token_count=3, .tokens=(signed char const[]){number, '-', number} },
+				(Rule) { .token_count=4, .tokens=(signed char const[]){area, number, '-', number} }
 			}
 		} },
 		(Definition) { .name="area", .rule_count={1, 0}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=5, .tokens=(int const[]){'(', '+', digit, digit, ')'} }
+				(Rule) { .token_count=5, .tokens=(signed char const[]){'(', '+', digit, digit, ')'} }
 			}
 		} },
 		(Definition) { .name="number", .rule_count={1, 1}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=1, .tokens=(int const[]){digit} },
+				(Rule) { .token_count=1, .tokens=(signed char const[]){digit} },
 			},
 			(Rule []) {
-				(Rule) { .token_count=2, .tokens=(int const[]){number, digit} }
+				(Rule) { .token_count=2, .tokens=(signed char const[]){number, digit} }
 			}
 		} },
 		(Definition) { .name="digit", .rule_count={10, 0}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=1, .tokens=(int const[]){'0'} },
-				(Rule) { .token_count=1, .tokens=(int const[]){'1'} },
-				(Rule) { .token_count=1, .tokens=(int const[]){'2'} },
-				(Rule) { .token_count=1, .tokens=(int const[]){'3'} },
-				(Rule) { .token_count=1, .tokens=(int const[]){'4'} },
-				(Rule) { .token_count=1, .tokens=(int const[]){'5'} },
-				(Rule) { .token_count=1, .tokens=(int const[]){'6'} },
-				(Rule) { .token_count=1, .tokens=(int const[]){'7'} },
-				(Rule) { .token_count=1, .tokens=(int const[]){'8'} },
-				(Rule) { .token_count=1, .tokens=(int const[]){'9'} },
+				(Rule) { .token_count=1, .tokens=(signed char const[]){'0'} },
+				(Rule) { .token_count=1, .tokens=(signed char const[]){'1'} },
+				(Rule) { .token_count=1, .tokens=(signed char const[]){'2'} },
+				(Rule) { .token_count=1, .tokens=(signed char const[]){'3'} },
+				(Rule) { .token_count=1, .tokens=(signed char const[]){'4'} },
+				(Rule) { .token_count=1, .tokens=(signed char const[]){'5'} },
+				(Rule) { .token_count=1, .tokens=(signed char const[]){'6'} },
+				(Rule) { .token_count=1, .tokens=(signed char const[]){'7'} },
+				(Rule) { .token_count=1, .tokens=(signed char const[]){'8'} },
+				(Rule) { .token_count=1, .tokens=(signed char const[]){'9'} },
 			}
 		} }
 	} };
@@ -112,12 +112,12 @@ int main(int argc, char const *argv[]) {
 // fuzzer function
 void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_depth) {
 	// declare stack and output
-	int* stack = malloc(2097152 * sizeof(int));
-	int* output = malloc(2097152 * sizeof(int));
+	signed char* stack = malloc(2097152 * sizeof(signed char));
+	signed char* output = malloc(2097152 * sizeof(signed char));
 
 	// declare chaser pointers for efficient stack modifications
-	int* stack_ptr = stack;
-	int* out_ptr = output;
+	signed char* stack_ptr = stack;
+	signed char* out_ptr = output;
 
 	// initialize stack
 	*(stack_ptr++) = START_TOKEN;
@@ -128,15 +128,15 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 	unsigned int depth_lock = 0;
 
 	// declare buffer store
-	int* buffer = malloc(2097152 * sizeof(int));
+	signed char* buffer = malloc(2097152 * sizeof(int));
 
 	// while stack not emmpty
 	while (STACK_LEN > 0) {
-		int token = stack[0]; // get token
+		signed char token = stack[0]; // get token
 		
 		// get buffer
 		int buffer_len = STACK_LEN - 1;
-		memcpy(buffer, stack + 1, buffer_len * sizeof(int));
+		memcpy(buffer, stack + 1, buffer_len * sizeof(signed char));
 		
 		if (token < 0) { // if token is nonterminal...
 			if (token == DEPTHLOCK_TOKEN) { // if token is depthlock token...
@@ -186,7 +186,7 @@ Rule const* get_rule(Definition const* definition, int cost) {
 }
 
 // append function
-int* append(int* target_ptr, int const source[], size_t len) {
-	memcpy(target_ptr, source, len * sizeof(int));
+signed char* append(signed char* target_ptr, signed char const source[], size_t len) {
+	memcpy(target_ptr, source, len * sizeof(signed char));
 	return target_ptr + len;
 }
