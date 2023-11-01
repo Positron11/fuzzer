@@ -154,7 +154,7 @@ void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_
 
 			size_t buffer_len = STACK_LEN - term_len; // save buffer length for later
 
-			// append nonterminals to output and write buffer to stack
+			// append terminals to output and write buffer to stack
 			out_ptr = append(out_ptr, nonterms, term_len);
 			OVERRWRITE(stack, stack_ptr, buffer, buffer_len);
 		}
