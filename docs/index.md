@@ -1,3 +1,7 @@
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
 # Background
 
 The current assignment involves the creation of a (simple, so far) depth-limited grammar fuzzer that can be called reasonably performant. This task might be divided into two equally important sub-tasks:
