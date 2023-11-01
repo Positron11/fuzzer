@@ -115,7 +115,7 @@ void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_
 			size_t buffer_len = STACK_LEN - token_len; // save buffer length for later
 
 			if (strcmp(token, DEPTH_LOCK_TOKEN) == 0) { // if current token is depth lock token...
-				OVERRWRITE(stack, stack_ptr, buffer, buffer_len); // write buffer to stack
+				OVERRWRITE(stack, stack_ptr, &stack[token_len], buffer_len); // write buffer to stack
 				
 				// reset depth lock vars
 				recursion_lock_status = unlocked;
@@ -150,13 +150,12 @@ void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_
 			// slice leading nonterminal tokens and (remaining) buffer out of stack
 			size_t terminals_len = strcspn(stack, "<");
 			slice(terminals, stack, 0, terminals_len);
-			slice(buffer, stack, terminals_len, STACK_LEN);
 
 			size_t buffer_len = STACK_LEN - terminals_len; // save buffer length for later
 
 			// append terminals to output and write buffer to stack
 			out_ptr = append(out_ptr, terminals, terminals_len);
-			OVERRWRITE(stack, stack_ptr, buffer, buffer_len);
+			OVERRWRITE(stack, stack_ptr, &stack[terminals_len], buffer_len);
 		}
 	}
 
