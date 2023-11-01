@@ -139,10 +139,8 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 				// reset depth lock vars
 				depth = 0;
 				depth_lock = unlocked;
-
-			// overrwrite stack with buffer
-			memmove(stack, &stack[1], buffer_len * sizeof(signed char));
-			stack_ptr = stack + buffer_len;
+				
+				OVERWRITE(stack, stack_ptr, &stack[1], buffer_len); // overrwrite stack with buffer
 
 			} else { // ...otherwise if token is rule
 				Definition const* definition = &grammar->definitions[-(START_TOKEN - token)]; // get definition
@@ -175,9 +173,7 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 		} else { // ...otherwise if token is terminal
 			*(out_ptr++) = token; // append token to output
 			
-			// overrwrite stack with buffer
-			memmove(stack, &stack[1], buffer_len * sizeof(signed char));
-			stack_ptr = stack + buffer_len;
+			OVERWRITE(stack, stack_ptr, &stack[1], buffer_len); // overrwrite stack with buffer
 		}
 	}
 
@@ -191,6 +187,6 @@ Rule const* get_rule(Definition const* definition, int cost) {
 
 // append function
 signed char* append(signed char* target_ptr, signed char const source[], size_t len) {
-	memcpy(target_ptr, source, len * sizeof(signed char));
+	memmove(target_ptr, source, len * sizeof(signed char));
 	return target_ptr + len;
 }
