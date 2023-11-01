@@ -23,74 +23,74 @@ typedef size_t depth_t;
 
 // rule structure
 typedef struct Rule {
-	size_t const token_count;
-	token_t const* tokens;
+	size_t token_count;
+	token_t* tokens;
 } Rule;
 
 // definition structure
 typedef struct Definition {
-	char const* name;
-	size_t const rule_count[2];
-	Rule const* rules[2]; // [0]: cheap, [1]: costly
+	char* name;
+	size_t rule_count[2];
+	Rule* rules[2]; // [0]: cheap, [1]: costly
 } Definition;
 
 // grammar structure
 typedef struct Grammar {
-	size_t const def_count;
-	Definition const* definitions;
+	size_t def_count;
+	Definition* definitions;
 } Grammar;
 
-// enumerated constants
+// enumeratedants
 enum depth_lock_states {unlocked, locking, locked};
 enum nonterminals {start = SCHAR_MIN, phone, area, number, digit, depthlock};
 
 // function declarations
-void fuzzer(Grammar const* grammar, depth_t min_depth, depth_t max_depth);
-Rule const* get_rule(Definition const* definition, int cost);
-token_t* append(token_t* target_ptr, token_t const source[], size_t len);
-token_t* prepend(token_t target[], token_t* target_ptr, token_t const source[], size_t target_len, size_t source_len);
+void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth);
+Rule* get_rule(Definition* definition, int cost);
+token_t* append(token_t* target_ptr, token_t source[], size_t len);
+token_t* prepend(token_t target[], token_t* target_ptr, token_t source[], size_t target_len, size_t source_len);
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char *argv[]) {
 	srand((unsigned) time(0)); // initialize random
 
 	// define grammar
-	Grammar const grammar = { .def_count=5, .definitions=(Definition []) {
+	Grammar grammar = { .def_count=5, .definitions=(Definition []) {
 		(Definition) { .name="start", .rule_count={1, 0}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=1, .tokens=(token_t const[]) {phone} }
+				(Rule) { .token_count=1, .tokens=(token_t[]) {phone} }
 			}
 		} },
 		(Definition) { .name="phone", .rule_count={2, 0}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=3, .tokens=(token_t const[]){number, '-', number} },
-				(Rule) { .token_count=4, .tokens=(token_t const[]){area, number, '-', number} }
+				(Rule) { .token_count=3, .tokens=(token_t[]){number, '-', number} },
+				(Rule) { .token_count=4, .tokens=(token_t[]){area, number, '-', number} }
 			}
 		} },
 		(Definition) { .name="area", .rule_count={1, 0}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=5, .tokens=(token_t const[]){'(', '+', digit, digit, ')'} }
+				(Rule) { .token_count=5, .tokens=(token_t[]){'(', '+', digit, digit, ')'} }
 			}
 		} },
 		(Definition) { .name="number", .rule_count={1, 1}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=1, .tokens=(token_t const[]){digit} },
+				(Rule) { .token_count=1, .tokens=(token_t[]){digit} },
 			},
 			(Rule []) {
-				(Rule) { .token_count=2, .tokens=(token_t const[]){digit, number} }
+				(Rule) { .token_count=2, .tokens=(token_t[]){digit, number} }
 			}
 		} },
 		(Definition) { .name="digit", .rule_count={10, 0}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=1, .tokens=(token_t const[]){'0'} },
-				(Rule) { .token_count=1, .tokens=(token_t const[]){'1'} },
-				(Rule) { .token_count=1, .tokens=(token_t const[]){'2'} },
-				(Rule) { .token_count=1, .tokens=(token_t const[]){'3'} },
-				(Rule) { .token_count=1, .tokens=(token_t const[]){'4'} },
-				(Rule) { .token_count=1, .tokens=(token_t const[]){'5'} },
-				(Rule) { .token_count=1, .tokens=(token_t const[]){'6'} },
-				(Rule) { .token_count=1, .tokens=(token_t const[]){'7'} },
-				(Rule) { .token_count=1, .tokens=(token_t const[]){'8'} },
-				(Rule) { .token_count=1, .tokens=(token_t const[]){'9'} },
+				(Rule) { .token_count=1, .tokens=(token_t[]){'0'} },
+				(Rule) { .token_count=1, .tokens=(token_t[]){'1'} },
+				(Rule) { .token_count=1, .tokens=(token_t[]){'2'} },
+				(Rule) { .token_count=1, .tokens=(token_t[]){'3'} },
+				(Rule) { .token_count=1, .tokens=(token_t[]){'4'} },
+				(Rule) { .token_count=1, .tokens=(token_t[]){'5'} },
+				(Rule) { .token_count=1, .tokens=(token_t[]){'6'} },
+				(Rule) { .token_count=1, .tokens=(token_t[]){'7'} },
+				(Rule) { .token_count=1, .tokens=(token_t[]){'8'} },
+				(Rule) { .token_count=1, .tokens=(token_t[]){'9'} },
 			}
 		} }
 	} };
@@ -109,7 +109,7 @@ int main(int argc, char const *argv[]) {
 }
 
 // fuzzer function
-void fuzzer(Grammar const* grammar, depth_t min_depth, depth_t max_depth) {
+void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth) {
 	// declare stack and output
 	token_t* stack = malloc(2097152 * sizeof(token_t));
 	token_t* output = malloc(2097152 * sizeof(token_t));
@@ -143,7 +143,7 @@ void fuzzer(Grammar const* grammar, depth_t min_depth, depth_t max_depth) {
 			continue;	
 		} 
 		
-		Definition const* definition = &grammar->definitions[token - start];
+		Definition* definition = &grammar->definitions[token - start];
 		
 		rule_cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST); // calculate cost based on depth
 		rule_cost = definition->rule_count[1] ? rule_cost : LOW_COST; // force low if definition not recursive
@@ -153,7 +153,7 @@ void fuzzer(Grammar const* grammar, depth_t min_depth, depth_t max_depth) {
 			current_depth++;
 		}
 
-		Rule const* rule = get_rule(definition, rule_cost);
+		Rule* rule = get_rule(definition, rule_cost);
 
 		if (recursion_lock_state == locking) {
 			stack_ptr = prepend(stack, stack_ptr, (token_t []) {depthlock}, STACK_LEN, 1); // prepend depthlock token to stack
@@ -167,18 +167,18 @@ void fuzzer(Grammar const* grammar, depth_t min_depth, depth_t max_depth) {
 }
 
 // get rule from definition
-Rule const* get_rule(Definition const* definition, int cost) {
+Rule* get_rule(Definition* definition, int cost) {
 	return &definition->rules[cost][rand() % (definition->rule_count)[cost]];
 }
 
 // append to token array
-token_t* append(token_t* target_ptr, token_t const source[], size_t len) {
+token_t* append(token_t* target_ptr, token_t source[], size_t len) {
 	memmove(target_ptr, source, len * sizeof(token_t));
 	return target_ptr + len;
 }
 
 // prepend to token array
-token_t* prepend(token_t target[], token_t* target_ptr, token_t const source[], size_t target_len, size_t source_len) {
+token_t* prepend(token_t target[], token_t* target_ptr, token_t source[], size_t target_len, size_t source_len) {
 	memmove(&target[source_len], target, target_len * sizeof(token_t)); // move existing contents to make space for source
 	memcpy(target, source, source_len); // copy source into created space
 	return target + source_len + target_len;
