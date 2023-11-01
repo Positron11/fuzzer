@@ -17,10 +17,13 @@
 	target_ptr = target;								\
 	target_ptr = append(target_ptr, source, len);
 
+// type definitions
+typedef signed char token_t;
+
 // rule structure
 typedef struct Rule {
 	size_t const token_count;
-	signed char const* tokens;
+	token_t const* tokens;
 } Rule;
 
 // definition structure
@@ -42,8 +45,8 @@ enum nonterminals {start = SCHAR_MIN, phone, area, number, digit, depthlock}; //
 // function declarations
 void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_depth);
 Rule const* get_rule(Definition const* definition, int cost);
-signed char* append(signed char* target_ptr, signed char const source[], size_t len);
-signed char* prepend(signed char target[], signed char* target_ptr, signed char const source[], size_t target_len, size_t source_len);
+token_t* append(token_t* target_ptr, token_t const source[], size_t len);
+token_t* prepend(token_t target[], token_t* target_ptr, token_t const source[], size_t target_len, size_t source_len);
 
 int main(int argc, char const *argv[]) {
 	srand((unsigned) time(0)); // initialize random
@@ -52,40 +55,40 @@ int main(int argc, char const *argv[]) {
 	Grammar const grammar = { .def_count=5, .definitions=(Definition []) {
 		(Definition) { .name="start", .rule_count={1, 0}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=1, .tokens=(signed char const[]) {phone} }
+				(Rule) { .token_count=1, .tokens=(token_t const[]) {phone} }
 			}
 		} },
 		(Definition) { .name="phone", .rule_count={2, 0}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=3, .tokens=(signed char const[]){number, '-', number} },
-				(Rule) { .token_count=4, .tokens=(signed char const[]){area, number, '-', number} }
+				(Rule) { .token_count=3, .tokens=(token_t const[]){number, '-', number} },
+				(Rule) { .token_count=4, .tokens=(token_t const[]){area, number, '-', number} }
 			}
 		} },
 		(Definition) { .name="area", .rule_count={1, 0}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=5, .tokens=(signed char const[]){'(', '+', digit, digit, ')'} }
+				(Rule) { .token_count=5, .tokens=(token_t const[]){'(', '+', digit, digit, ')'} }
 			}
 		} },
 		(Definition) { .name="number", .rule_count={1, 1}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=1, .tokens=(signed char const[]){digit} },
+				(Rule) { .token_count=1, .tokens=(token_t const[]){digit} },
 			},
 			(Rule []) {
-				(Rule) { .token_count=2, .tokens=(signed char const[]){digit, number} }
+				(Rule) { .token_count=2, .tokens=(token_t const[]){digit, number} }
 			}
 		} },
 		(Definition) { .name="digit", .rule_count={10, 0}, .rules={
 			(Rule []) {
-				(Rule) { .token_count=1, .tokens=(signed char const[]){'0'} },
-				(Rule) { .token_count=1, .tokens=(signed char const[]){'1'} },
-				(Rule) { .token_count=1, .tokens=(signed char const[]){'2'} },
-				(Rule) { .token_count=1, .tokens=(signed char const[]){'3'} },
-				(Rule) { .token_count=1, .tokens=(signed char const[]){'4'} },
-				(Rule) { .token_count=1, .tokens=(signed char const[]){'5'} },
-				(Rule) { .token_count=1, .tokens=(signed char const[]){'6'} },
-				(Rule) { .token_count=1, .tokens=(signed char const[]){'7'} },
-				(Rule) { .token_count=1, .tokens=(signed char const[]){'8'} },
-				(Rule) { .token_count=1, .tokens=(signed char const[]){'9'} },
+				(Rule) { .token_count=1, .tokens=(token_t const[]){'0'} },
+				(Rule) { .token_count=1, .tokens=(token_t const[]){'1'} },
+				(Rule) { .token_count=1, .tokens=(token_t const[]){'2'} },
+				(Rule) { .token_count=1, .tokens=(token_t const[]){'3'} },
+				(Rule) { .token_count=1, .tokens=(token_t const[]){'4'} },
+				(Rule) { .token_count=1, .tokens=(token_t const[]){'5'} },
+				(Rule) { .token_count=1, .tokens=(token_t const[]){'6'} },
+				(Rule) { .token_count=1, .tokens=(token_t const[]){'7'} },
+				(Rule) { .token_count=1, .tokens=(token_t const[]){'8'} },
+				(Rule) { .token_count=1, .tokens=(token_t const[]){'9'} },
 			}
 		} }
 	} };
@@ -106,12 +109,12 @@ int main(int argc, char const *argv[]) {
 // fuzzer function
 void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_depth) {
 	// declare stack and output
-	signed char* stack = malloc(2097152 * sizeof(signed char));
-	signed char* output = malloc(2097152 * sizeof(signed char));
+	token_t* stack = malloc(2097152 * sizeof(token_t));
+	token_t* output = malloc(2097152 * sizeof(token_t));
 
 	// declare chaser pointers for efficient stack modifications
-	signed char* stack_ptr = stack;
-	signed char* out_ptr = output;
+	token_t* stack_ptr = stack;
+	token_t* out_ptr = output;
 
 	*(stack_ptr++) = start; // initialize stack
 
@@ -122,7 +125,7 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 
 	// while stack not emmpty
 	while (STACK_LEN > 0) {
-		signed char token = stack[0]; // get token
+		token_t token = stack[0]; // get token
 		
 		int buffer_len = STACK_LEN - 1; // get buffer length
 		OVERWRITE(stack, stack_ptr, &stack[1], buffer_len); // overrwrite stack with buffer
@@ -150,7 +153,7 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 				Rule const* rule = get_rule(definition, cost); // get rule
 
 				if (recursion_lock_state == locking) { // if in locking stage...
-					stack_ptr = prepend(stack, stack_ptr, (signed char []) {depthlock}, STACK_LEN, 1); // prepend depthlock token to stack
+					stack_ptr = prepend(stack, stack_ptr, (token_t []) {depthlock}, STACK_LEN, 1); // prepend depthlock token to stack
 					recursion_lock_state = locked;
 				}
 
@@ -171,14 +174,14 @@ Rule const* get_rule(Definition const* definition, int cost) {
 }
 
 // append to token array
-signed char* append(signed char* target_ptr, signed char const source[], size_t len) {
-	memmove(target_ptr, source, len * sizeof(signed char));
+token_t* append(token_t* target_ptr, token_t const source[], size_t len) {
+	memmove(target_ptr, source, len * sizeof(token_t));
 	return target_ptr + len;
 }
 
 // prepend to token array
-signed char* prepend(signed char target[], signed char* target_ptr, signed char const source[], size_t target_len, size_t source_len) {
-	memmove(&target[source_len], target, target_len * sizeof(signed char));
+token_t* prepend(token_t target[], token_t* target_ptr, token_t const source[], size_t target_len, size_t source_len) {
+	memmove(&target[source_len], target, target_len * sizeof(token_t));
 	memcpy(target, source, source_len);
 	return target + source_len + target_len;
 }
