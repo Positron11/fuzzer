@@ -1,6 +1,3 @@
-% Simple High-Performance Grammar Fuzzer
-% Aarush Kumbhakern
-
 # Background
 
 The current assignment involves the creation of a (simple, so far) depth-limited grammar fuzzer that can be called reasonably performant. This task might be divided into two equally important sub-tasks:
