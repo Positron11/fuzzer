@@ -130,40 +130,39 @@ void fuzzer(Grammar const* grammar, depth_t min_depth, depth_t max_depth) {
 		
 		int buffer_len = STACK_LEN - 1; // get buffer length
 		OVERWRITE(stack, stack_ptr, &stack[1], buffer_len); // overrwrite stack with buffer
-		
-		if (token < 0) { // if token is nonterminal...
-			if (token == depthlock) { // if token is depthlock token...
-				
-				// reset depth lock vars
-				recursion_lock_state = unlocked;
-				current_depth = 0;				
 
-			} else { // ...otherwise if token is rule
-				Definition const* definition = &grammar->definitions[token - start]; // get definition
-				
-				// calculate cost based on depth and force low if definition not recursive
-				rule_cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST);
-				rule_cost = definition->rule_count[1] ? rule_cost : LOW_COST;
-				
-				// increment depth if high cost (recursive) expansion
-				if (rule_cost == HIGH_COST) {
-					if (recursion_lock_state == unlocked) recursion_lock_state = locking;
-					current_depth++;
-				}
-
-				Rule const* rule = get_rule(definition, rule_cost); // get rule
-
-				if (recursion_lock_state == locking) { // if in locking stage...
-					stack_ptr = prepend(stack, stack_ptr, (token_t []) {depthlock}, STACK_LEN, 1); // prepend depthlock token to stack
-					recursion_lock_state = locked;
-				}
-
-				stack_ptr = prepend(stack, stack_ptr, rule->tokens, STACK_LEN, rule->token_count); // prepend rule to stack
-			}
-
-		} else { // ...otherwise if token is terminal
-			*(out_ptr++) = token; // append token to output
+		if (token >= 0) { // if token is terminal
+			*(out_ptr++) = token; // append token to output6
+			continue;
 		}
+		
+		if (token == depthlock) { // if token is depthlock token...
+			// reset depth lock vars
+			recursion_lock_state = unlocked;
+			current_depth = 0;
+			continue;	
+		} 
+		
+		Definition const* definition = &grammar->definitions[token - start]; // get definition
+		
+		// calculate cost based on depth and force low if definition not recursive
+		rule_cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST);
+		rule_cost = definition->rule_count[1] ? rule_cost : LOW_COST;
+		
+		// increment depth if high cost (recursive) expansion
+		if (rule_cost == HIGH_COST) {
+			if (recursion_lock_state == unlocked) recursion_lock_state = locking;
+			current_depth++;
+		}
+
+		Rule const* rule = get_rule(definition, rule_cost); // get rule
+
+		if (recursion_lock_state == locking) { // if in locking stage...
+			stack_ptr = prepend(stack, stack_ptr, (token_t []) {depthlock}, STACK_LEN, 1); // prepend depthlock token to stack
+			recursion_lock_state = locked;
+		}
+
+		stack_ptr = prepend(stack, stack_ptr, rule->tokens, STACK_LEN, rule->token_count); // prepend rule to stack
 	}
 
 	for (size_t i = 0; i < out_ptr - output; i++) putchar(output[i]); // print output
