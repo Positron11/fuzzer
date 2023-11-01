@@ -1,6 +1,6 @@
-<script type="text/javascript" id="MathJax-script" async
-  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-</script>
+<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<script>window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };</script>
 
 # Background
 
@@ -19,7 +19,7 @@ My first attempt at developing a grammar structure naively imitated BNF grammar,
 
 ## The Fuzzer
 
-The fuzzer itself (iterative), after I'd overcome the initial hurdle of not knowing C, ended up being performant up to a depth of $10^5$. I'd also begun profiling [^1] at this point, and the primary source of overhead at this point was `strcat`. Discovering Schlemiel the Painter's Algorithm in reference to the same led to the development of a custom concatenation function (individually copying bytes via walking pointers) which boosted performance by $\approx 3000\%$ up to a maximum performant depth of $10^6$. <sup>commit [c390831](https://github.com/Positron11/fuzzer/commit/c390831b9e10fb5ee50d4d2bf2fe5e6c81f500f0)</sup>
+The fuzzer itself (iterative), after I'd overcome the initial hurdle of not knowing C, ended up being performant up to a depth of \(10^5\). I'd also begun profiling [^1] at this point, and the primary source of overhead at this point was `strcat`. Discovering Schlemiel the Painter's Algorithm in reference to the same led to the development of a custom concatenation function (individually copying bytes via walking pointers) which boosted performance by $\approx 3000\%$ up to a maximum performant depth of $10^6$. <sup>commit [c390831](https://github.com/Positron11/fuzzer/commit/c390831b9e10fb5ee50d4d2bf2fe5e6c81f500f0)</sup>
 
 ## Alternative Grammar
 
