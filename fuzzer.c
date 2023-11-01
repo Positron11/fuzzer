@@ -40,8 +40,9 @@ typedef struct Grammar {
 	Definition const* definitions;
 } Grammar;
 
-enum depth_lock_states {unlocked, locking, locked}; // depth lock states
-enum nonterminals {start = SCHAR_MIN, phone, area, number, digit, depthlock}; // generate nonterminal tokens
+// enumerated constants
+enum depth_lock_states {unlocked, locking, locked};
+enum nonterminals {start = SCHAR_MIN, phone, area, number, digit, depthlock};
 
 // function declarations
 void fuzzer(Grammar const* grammar, depth_t min_depth, depth_t max_depth);
@@ -94,7 +95,7 @@ int main(int argc, char const *argv[]) {
 		} }
 	} };
 
-	// set options from command line if possible otherwise default
+	// set options from command line if possible otherwise set to defaults
 	depth_t min_depth = argc > 1 ? strtod(argv[1], 0) : 2;
 	depth_t max_depth = argc > 1 ? (argc > 2 ? strtod(argv[2], 0) : min_depth) : 4;
 	depth_t runs = argc > 3 ? strtod(argv[3], 0) : 1;
@@ -136,28 +137,25 @@ void fuzzer(Grammar const* grammar, depth_t min_depth, depth_t max_depth) {
 			continue;
 		}
 		
-		if (token == depthlock) { // if token is depthlock token...
-			// reset depth lock vars
+		if (token == depthlock) { // if token is depthlock token
 			recursion_lock_state = unlocked;
 			current_depth = 0;
 			continue;	
 		} 
 		
-		Definition const* definition = &grammar->definitions[token - start]; // get definition
+		Definition const* definition = &grammar->definitions[token - start];
 		
-		// calculate cost based on depth and force low if definition not recursive
-		rule_cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST);
-		rule_cost = definition->rule_count[1] ? rule_cost : LOW_COST;
+		rule_cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST); // calculate cost based on depth
+		rule_cost = definition->rule_count[1] ? rule_cost : LOW_COST; // force low if definition not recursive
 		
-		// increment depth if high cost (recursive) expansion
 		if (rule_cost == HIGH_COST) {
-			if (recursion_lock_state == unlocked) recursion_lock_state = locking;
+			if (recursion_lock_state == unlocked) recursion_lock_state = locking; // if in locking state promote to locked
 			current_depth++;
 		}
 
-		Rule const* rule = get_rule(definition, rule_cost); // get rule
+		Rule const* rule = get_rule(definition, rule_cost);
 
-		if (recursion_lock_state == locking) { // if in locking stage...
+		if (recursion_lock_state == locking) {
 			stack_ptr = prepend(stack, stack_ptr, (token_t []) {depthlock}, STACK_LEN, 1); // prepend depthlock token to stack
 			recursion_lock_state = locked;
 		}
@@ -181,7 +179,7 @@ token_t* append(token_t* target_ptr, token_t const source[], size_t len) {
 
 // prepend to token array
 token_t* prepend(token_t target[], token_t* target_ptr, token_t const source[], size_t target_len, size_t source_len) {
-	memmove(&target[source_len], target, target_len * sizeof(token_t));
-	memcpy(target, source, source_len);
+	memmove(&target[source_len], target, target_len * sizeof(token_t)); // move existing contents to make space for source
+	memcpy(target, source, source_len); // copy source into created space
 	return target + source_len + target_len;
 }
