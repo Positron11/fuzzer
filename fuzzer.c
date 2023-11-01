@@ -120,9 +120,9 @@ void fuzzer(Grammar const* grammar, depth_t min_depth, depth_t max_depth) {
 	*(stack_ptr++) = start; // initialize stack
 
 	// recursion limit variables
-	unsigned int cost = 0;
-	depth_t depth = 0;
-	unsigned int recursion_lock_state = 0;
+	int rule_cost = 0;
+	depth_t current_depth = 0;
+	int recursion_lock_state = 0;
 
 	// while stack not emmpty
 	while (STACK_LEN > 0) {
@@ -136,22 +136,22 @@ void fuzzer(Grammar const* grammar, depth_t min_depth, depth_t max_depth) {
 				
 				// reset depth lock vars
 				recursion_lock_state = unlocked;
-				depth = 0;				
+				current_depth = 0;				
 
 			} else { // ...otherwise if token is rule
 				Definition const* definition = &grammar->definitions[-(start - token)]; // get definition
 				
 				// calculate cost based on depth and force low if definition not recursive
-				unsigned int cost = depth < min_depth ? HIGH_COST : (depth >= max_depth ? LOW_COST : RAND_COST);
-				cost = definition->rule_count[1] ? cost : LOW_COST;
+				rule_cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST);
+				rule_cost = definition->rule_count[1] ? rule_cost : LOW_COST;
 				
 				// increment depth if high cost (recursive) expansion
-				if (cost == HIGH_COST) {
+				if (rule_cost == HIGH_COST) {
 					if (recursion_lock_state == unlocked) recursion_lock_state = locking;
-					depth++;
+					current_depth++;
 				}
 
-				Rule const* rule = get_rule(definition, cost); // get rule
+				Rule const* rule = get_rule(definition, rule_cost); // get rule
 
 				if (recursion_lock_state == locking) { // if in locking stage...
 					stack_ptr = prepend(stack, stack_ptr, (token_t []) {depthlock}, STACK_LEN, 1); // prepend depthlock token to stack
