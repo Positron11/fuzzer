@@ -102,9 +102,9 @@ void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_
 	unsigned int depth_lock = 0;
 
 	// declare token, nonterms, and buffer stores
-	char* token = malloc(sizeof(char));
-	char* nonterms = malloc(sizeof(char));
-	char* buffer = malloc(sizeof(char));
+	char* token = malloc(2097152 * sizeof(char));
+	char* nonterms = malloc(2097152 * sizeof(char));
+	char* buffer = malloc(2097152 * sizeof(char));
 
 	// while stack not empty
 	while (STACK_LEN > 0) {
@@ -179,7 +179,7 @@ Definition const* get_definition(Definition const* grammar, char key[]) {
 
 // get string segment
 void slice(char target[], char const source[], size_t start, size_t end) {
-	target = realloc(target, ((end - start) + 1) * sizeof(char));
+	// target = realloc(target, ((end - start) + 1) * sizeof(char));
 	memcpy(target, source + start, end - start);
 	target[end - start] = '\0';
 }
