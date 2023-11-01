@@ -130,6 +130,7 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 	// declare buffer store
 	int* buffer = malloc(2097152 * sizeof(int));
 
+	// while stack not emmpty
 	while (STACK_LEN > 0) {
 		int token = stack[0]; // get token
 		
@@ -172,7 +173,6 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 
 		} else { // ...otherwise if token is terminal
 			*(out_ptr++) = token; // append token to output
-
 			OVERWRITE(stack, stack_ptr, buffer, buffer_len); // overrwrite stack with buffer
 		}
 	}
