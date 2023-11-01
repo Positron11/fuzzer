@@ -16,15 +16,10 @@
 // computed definitions
 #define STACK_LEN stack_ptr - stack
 
-// append function-like macro
-#define APPEND(target_ptr, source, len)					\
-	memcpy(target_ptr, source, len * sizeof(int));		\
-	target_ptr += len;
-
 // overrwrite function-like macro
 #define OVERWRITE(target, target_ptr, source, len)		\
 	target_ptr = target;								\
-	APPEND(target_ptr, source, len);
+	target_ptr = append(target_ptr, source, len);
 
 // depth lock states
 enum depth_lock_states {unlocked, locking, locked};
@@ -51,6 +46,7 @@ typedef struct Grammar {
 // function declarations
 void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_depth);
 Rule const* get_rule(Definition const* definition, int cost);
+int* append(int* target_ptr, int const source[], size_t len);
 
 int main(int argc, char const *argv[]) {
 	srand((unsigned) time(0)); // initialize random
@@ -172,7 +168,7 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 					depth_lock = locked;
 				}
 
-				APPEND(stack_ptr, buffer, buffer_len); // append buffer to stack
+				stack_ptr = append(stack_ptr, buffer, buffer_len); // append buffer to stack
 			}
 
 		} else { // ...otherwise if token is terminal
@@ -188,4 +184,10 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 // get rule from definition
 Rule const* get_rule(Definition const* definition, int cost) {
 	return &definition->rules[cost][rand() % (definition->rule_count)[cost]];
+}
+
+// append function
+int* append(int* target_ptr, int const source[], size_t len) {
+	memcpy(target_ptr, source, len * sizeof(int));
+	return target_ptr + len;
 }
