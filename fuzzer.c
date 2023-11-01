@@ -139,7 +139,7 @@ void fuzzer(Grammar const* grammar, depth_t min_depth, depth_t max_depth) {
 				current_depth = 0;				
 
 			} else { // ...otherwise if token is rule
-				Definition const* definition = &grammar->definitions[-(start - token)]; // get definition
+				Definition const* definition = &grammar->definitions[token - start]; // get definition
 				
 				// calculate cost based on depth and force low if definition not recursive
 				rule_cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST);
