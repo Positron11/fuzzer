@@ -4,10 +4,6 @@
 #include <time.h>
 #include <limits.h>
 
-// token definitions
-#define DEPTHLOCK_TOKEN -100
-#define START_TOKEN -100 + 1
-
 // cost definitions
 #define LOW_COST 0
 #define HIGH_COST 1
@@ -20,9 +16,6 @@
 #define OVERWRITE(target, target_ptr, source, len)		\
 	target_ptr = target;								\
 	target_ptr = append(target_ptr, source, len);
-
-// depth lock states
-enum depth_lock_states {unlocked, locking, locked};
 
 // rule structure
 typedef struct Rule {
@@ -43,6 +36,9 @@ typedef struct Grammar {
 	Definition const* definitions;
 } Grammar;
 
+enum depth_lock_states {unlocked, locking, locked}; // depth lock states
+enum nonterminals {start = SCHAR_MIN, phone, area, number, digit, depthlock}; // generate nonterminal tokens
+
 // function declarations
 void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_depth);
 Rule const* get_rule(Definition const* definition, int cost);
@@ -50,9 +46,6 @@ signed char* append(signed char* target_ptr, signed char const source[], size_t 
 
 int main(int argc, char const *argv[]) {
 	srand((unsigned) time(0)); // initialize random
-
-	// generate nonterminal tokens
-	enum special {start = START_TOKEN, phone, area, number, digit};
 
 	// define grammar
 	Grammar const grammar = { .def_count=5, .definitions=(Definition []) {
@@ -120,12 +113,12 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 	signed char* out_ptr = output;
 
 	// initialize stack
-	*(stack_ptr++) = START_TOKEN;
+	*(stack_ptr++) = start;
 
 	// recursion limit variables
 	unsigned int cost = 0;
 	unsigned int depth = 0;
-	unsigned int depth_lock = 0;
+	unsigned int recursion_lock_state = 0;
 
 	// while stack not emmpty
 	while (STACK_LEN > 0) {
@@ -135,15 +128,15 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 		int buffer_len = STACK_LEN - 1;
 		
 		if (token < 0) { // if token is nonterminal...
-			if (token == DEPTHLOCK_TOKEN) { // if token is depthlock token...
+			if (token == depthlock) { // if token is depthlock token...
 				// reset depth lock vars
 				depth = 0;
-				depth_lock = unlocked;
+				recursion_lock_state = unlocked;
 				
 				OVERWRITE(stack, stack_ptr, &stack[1], buffer_len); // overrwrite stack with buffer
 
 			} else { // ...otherwise if token is rule
-				Definition const* definition = &grammar->definitions[-(START_TOKEN - token)]; // get definition
+				Definition const* definition = &grammar->definitions[-(start - token)]; // get definition
 				
 				// calculate cost based on depth and force low if definition not recursive
 				unsigned int cost = depth < min_depth ? HIGH_COST : (depth >= max_depth ? LOW_COST : RAND_COST);
@@ -151,20 +144,20 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 				
 				// increment depth if high cost (recursive) expansion
 				if (cost == HIGH_COST) {
-					if (depth_lock == unlocked) depth_lock = locking;
+					if (recursion_lock_state == unlocked) recursion_lock_state = locking;
 					depth++;
 				}
 
 				Rule const* rule = get_rule(definition, cost); // get rule
 
-				size_t shift = rule->token_count + (depth_lock == locking); // calculate buffer shift
+				size_t shift = rule->token_count + (recursion_lock_state == locking); // calculate buffer shift
 				memmove(&stack[shift], &stack[1], buffer_len * sizeof(signed char)); // shift buffer up to make room for rule
 				
 				OVERWRITE(stack, stack_ptr, rule->tokens, rule->token_count); // overrwrite stack with rule tokens
 
-				if (depth_lock == locking) { // if in locking stage...
-					*(stack_ptr++) = DEPTHLOCK_TOKEN; // ...append lock token to stack
-					depth_lock = locked;
+				if (recursion_lock_state == locking) { // if in locking stage...
+					*(stack_ptr++) = depthlock; // ...append lock token to stack
+					recursion_lock_state = locked;
 				}
 
 				stack_ptr = stack + shift + buffer_len; // move stack pointer to end of stack
