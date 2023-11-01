@@ -77,7 +77,7 @@ int main(int argc, char const *argv[]) {
 				(Rule) { .token_count=1, .tokens=(signed char const[]){digit} },
 			},
 			(Rule []) {
-				(Rule) { .token_count=2, .tokens=(signed char const[]){number, digit} }
+				(Rule) { .token_count=2, .tokens=(signed char const[]){digit, number} }
 			}
 		} },
 		(Definition) { .name="digit", .rule_count={10, 0}, .rules={
@@ -127,16 +127,12 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 	unsigned int depth = 0;
 	unsigned int depth_lock = 0;
 
-	// declare buffer store
-	signed char* buffer = malloc(2097152 * sizeof(int));
-
 	// while stack not emmpty
 	while (STACK_LEN > 0) {
 		signed char token = stack[0]; // get token
 		
-		// get buffer
+		// get buffer length
 		int buffer_len = STACK_LEN - 1;
-		memcpy(buffer, stack + 1, buffer_len * sizeof(signed char));
 		
 		if (token < 0) { // if token is nonterminal...
 			if (token == DEPTHLOCK_TOKEN) { // if token is depthlock token...
@@ -144,7 +140,9 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 				depth = 0;
 				depth_lock = unlocked;
 
-				OVERWRITE(stack, stack_ptr, buffer, buffer_len); // overrwrite stack with buffer
+			// overrwrite stack with buffer
+			memmove(stack, &stack[1], buffer_len * sizeof(signed char));
+			stack_ptr = stack + buffer_len;
 
 			} else { // ...otherwise if token is rule
 				Definition const* definition = &grammar->definitions[-(START_TOKEN - token)]; // get definition
@@ -161,6 +159,9 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 
 				Rule const* rule = get_rule(definition, cost); // get rule
 
+				size_t shift = rule->token_count + (depth_lock == locking); // calculate buffer shift
+				memmove(&stack[shift], &stack[1], buffer_len * sizeof(signed char)); // shift buffer up to make room for rule
+				
 				OVERWRITE(stack, stack_ptr, rule->tokens, rule->token_count); // overrwrite stack with rule tokens
 
 				if (depth_lock == locking) { // if in locking stage...
@@ -168,12 +169,15 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 					depth_lock = locked;
 				}
 
-				stack_ptr = append(stack_ptr, buffer, buffer_len); // append buffer to stack
+				stack_ptr = stack + shift + buffer_len; // move stack pointer to end of stack
 			}
 
 		} else { // ...otherwise if token is terminal
 			*(out_ptr++) = token; // append token to output
-			OVERWRITE(stack, stack_ptr, buffer, buffer_len); // overrwrite stack with buffer
+			
+			// overrwrite stack with buffer
+			memmove(stack, &stack[1], buffer_len * sizeof(signed char));
+			stack_ptr = stack + buffer_len;
 		}
 	}
 
