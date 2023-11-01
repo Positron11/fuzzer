@@ -21,9 +21,6 @@
 	target_ptr = target;												\
 	target_ptr = append(target_ptr, source, len);
 
-// depth lock states
-enum depth_lock_states {unlocked, locking, locked};
-
 // hashable rule structure
 typedef struct Definition {
 	char const key[32]; // uthash hashtable key
@@ -31,6 +28,8 @@ typedef struct Definition {
 	char const** rules[2]; // expansion options ([0]: cheap, [1]: costly)
 	UT_hash_handle hh;
 } Definition;
+
+enum depth_lock_states {unlocked, locking, locked}; // depth lock states
 
 // declare functions
 void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_depth);
@@ -93,17 +92,16 @@ void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_
 	char* stack_ptr = stack;
 	char* out_ptr = output;
 
-	// initialize stack
-	OVERRWRITE(stack, stack_ptr, START_TOKEN, strlen(START_TOKEN));
+	OVERRWRITE(stack, stack_ptr, START_TOKEN, strlen(START_TOKEN)); // initialize stack
 
 	// recursion limit variables
 	unsigned int cost = 0;
 	unsigned int depth = 0;
-	unsigned int depth_lock = 0;
+	unsigned int recursion_lock_status = 0;
 
-	// declare token, nonterms, and buffer stores
+	// declare token, terminals, and buffer stores
 	char* token = malloc(2097152 * sizeof(char));
-	char* nonterms = malloc(2097152 * sizeof(char));
+	char* terminals = malloc(2097152 * sizeof(char));
 	char* buffer = malloc(2097152 * sizeof(char));
 
 	// while stack not empty
@@ -113,13 +111,15 @@ void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_
 			size_t token_len = strcspn(stack, ">") + 1;
 			slice(token, stack, 0, token_len);
 			slice(buffer, stack, token_len, STACK_LEN);
+			
 			size_t buffer_len = STACK_LEN - token_len; // save buffer length for later
 
 			if (strcmp(token, DEPTH_LOCK_TOKEN) == 0) { // if current token is depth lock token...
-				depth = 0;
-				depth_lock = unlocked;
-
 				OVERRWRITE(stack, stack_ptr, buffer, buffer_len); // write buffer to stack
+				
+				// reset depth lock vars
+				recursion_lock_status = unlocked;
+				depth = 0;
 
 			} else { // ...otherwise if current token is expandable
 				Definition const* definition = get_definition(grammar, token); // get definition
@@ -130,17 +130,17 @@ void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_
 
 				// increment depth if high cost (recursive) expansion
 				if (cost == HIGH_COST) {
-					if (depth_lock == unlocked) depth_lock = locking;
+					if (recursion_lock_status == unlocked) recursion_lock_status = locking;
 					depth++;
 				}
 
 				char const* rule = get_rule(definition, cost); // get rule
 
-				OVERRWRITE(stack, stack_ptr, rule, strlen(rule)); // write random(?) expansion to stack
+				OVERRWRITE(stack, stack_ptr, rule, strlen(rule)); // write rule to stack
 
-				if (depth_lock == locking) { // if in locking stage...
+				if (recursion_lock_status == locking) { // if in locking stage...
 					stack_ptr = append(stack_ptr, DEPTH_LOCK_TOKEN, 7); // ...append lock token to stack
-					depth_lock = locked;
+					recursion_lock_status = locked;
 				}
 
 				stack_ptr = append(stack_ptr, buffer, buffer_len); // append buffer to stack
@@ -148,14 +148,14 @@ void fuzzer(Definition const* grammar, unsigned int min_depth, unsigned int max_
 
 		} else { // ...otherwise if first token in stack is terminal
 			// slice leading nonterminal tokens and (remaining) buffer out of stack
-			size_t term_len = strcspn(stack, "<");
-			slice(nonterms, stack, 0, term_len);
-			slice(buffer, stack, term_len, STACK_LEN);
+			size_t terminals_len = strcspn(stack, "<");
+			slice(terminals, stack, 0, terminals_len);
+			slice(buffer, stack, terminals_len, STACK_LEN);
 
-			size_t buffer_len = STACK_LEN - term_len; // save buffer length for later
+			size_t buffer_len = STACK_LEN - terminals_len; // save buffer length for later
 
 			// append terminals to output and write buffer to stack
-			out_ptr = append(out_ptr, nonterms, term_len);
+			out_ptr = append(out_ptr, terminals, terminals_len);
 			OVERRWRITE(stack, stack_ptr, buffer, buffer_len);
 		}
 	}
@@ -180,12 +180,12 @@ Definition const* get_definition(Definition const* grammar, char key[]) {
 // get string segment
 void slice(char target[], char const source[], size_t start, size_t end) {
 	// target = realloc(target, ((end - start) + 1) * sizeof(char));
-	memcpy(target, source + start, end - start);
+	memcpy(target, source + start, (end - start) * sizeof(char));
 	target[end - start] = '\0';
 }
 
 // append to traced string
 char* append(char* target_ptr, char const source[], size_t len) {
-	memcpy(target_ptr, source, len + 1);
+	memcpy(target_ptr, source, (len + 1) * sizeof(char));
 	return target_ptr + len;
 }
