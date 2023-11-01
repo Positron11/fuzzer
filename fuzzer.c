@@ -19,6 +19,7 @@
 
 // type definitions
 typedef signed char token_t;
+typedef size_t depth_t;
 
 // rule structure
 typedef struct Rule {
@@ -43,7 +44,7 @@ enum depth_lock_states {unlocked, locking, locked}; // depth lock states
 enum nonterminals {start = SCHAR_MIN, phone, area, number, digit, depthlock}; // generate nonterminal tokens
 
 // function declarations
-void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_depth);
+void fuzzer(Grammar const* grammar, depth_t min_depth, depth_t max_depth);
 Rule const* get_rule(Definition const* definition, int cost);
 token_t* append(token_t* target_ptr, token_t const source[], size_t len);
 token_t* prepend(token_t target[], token_t* target_ptr, token_t const source[], size_t target_len, size_t source_len);
@@ -94,9 +95,9 @@ int main(int argc, char const *argv[]) {
 	} };
 
 	// set options from command line if possible otherwise default
-	unsigned int min_depth = argc > 1 ? strtod(argv[1], 0) : 2;
-	unsigned int max_depth = argc > 1 ? (argc > 2 ? strtod(argv[2], 0) : min_depth) : 4;
-	unsigned int runs = argc > 3 ? strtod(argv[3], 0) : 1;
+	depth_t min_depth = argc > 1 ? strtod(argv[1], 0) : 2;
+	depth_t max_depth = argc > 1 ? (argc > 2 ? strtod(argv[2], 0) : min_depth) : 4;
+	depth_t runs = argc > 3 ? strtod(argv[3], 0) : 1;
 	
 	// main loop
 	for (size_t i = 0; i < runs; i++) {
@@ -107,7 +108,7 @@ int main(int argc, char const *argv[]) {
 }
 
 // fuzzer function
-void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_depth) {
+void fuzzer(Grammar const* grammar, depth_t min_depth, depth_t max_depth) {
 	// declare stack and output
 	token_t* stack = malloc(2097152 * sizeof(token_t));
 	token_t* output = malloc(2097152 * sizeof(token_t));
@@ -120,7 +121,7 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 
 	// recursion limit variables
 	unsigned int cost = 0;
-	unsigned int depth = 0;
+	depth_t depth = 0;
 	unsigned int recursion_lock_state = 0;
 
 	// while stack not emmpty
