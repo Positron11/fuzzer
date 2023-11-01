@@ -112,8 +112,7 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 	signed char* stack_ptr = stack;
 	signed char* out_ptr = output;
 
-	// initialize stack
-	*(stack_ptr++) = start;
+	*(stack_ptr++) = start; // initialize stack
 
 	// recursion limit variables
 	unsigned int cost = 0;
@@ -124,16 +123,15 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 	while (STACK_LEN > 0) {
 		signed char token = stack[0]; // get token
 		
-		// get buffer length
-		int buffer_len = STACK_LEN - 1;
+		int buffer_len = STACK_LEN - 1; // get buffer length
 		
 		if (token < 0) { // if token is nonterminal...
 			if (token == depthlock) { // if token is depthlock token...
-				// reset depth lock vars
-				depth = 0;
-				recursion_lock_state = unlocked;
-				
 				OVERWRITE(stack, stack_ptr, &stack[1], buffer_len); // overrwrite stack with buffer
+				
+				// reset depth lock vars
+				recursion_lock_state = unlocked;
+				depth = 0;				
 
 			} else { // ...otherwise if token is rule
 				Definition const* definition = &grammar->definitions[-(start - token)]; // get definition
@@ -150,8 +148,9 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 
 				Rule const* rule = get_rule(definition, cost); // get rule
 
-				size_t shift = rule->token_count + (recursion_lock_state == locking); // calculate buffer shift
-				memmove(&stack[shift], &stack[1], buffer_len * sizeof(signed char)); // shift buffer up to make room for rule
+				// calculate buffer shift and shift buffer up to make room for rule
+				size_t shift = rule->token_count + (recursion_lock_state == locking);
+				memmove(&stack[shift], &stack[1], buffer_len * sizeof(signed char));
 				
 				OVERWRITE(stack, stack_ptr, rule->tokens, rule->token_count); // overrwrite stack with rule tokens
 
@@ -170,7 +169,7 @@ void fuzzer(Grammar const* grammar, unsigned int min_depth, unsigned int max_dep
 		}
 	}
 
-	for (size_t i = 0; i < out_ptr - output; i++) putchar(output[i]);
+	for (size_t i = 0; i < out_ptr - output; i++) putchar(output[i]); // print output
 }
 
 // get rule from definition
