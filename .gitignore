@@ -51,9 +51,8 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-# Logfiles
-*.data*
-*.log*
+# Profiling Datta
+Profiling/
 
 # Bash
 .aliases
