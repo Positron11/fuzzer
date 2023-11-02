@@ -84,7 +84,7 @@ Maximum performant depth [^prfmdpt]: $\approx 10^3$.
 
 I was yet to begin profiling anything at this point, but graphing task-clock against recursion depth produced the following:
 
-![V0.0 fuzzer | task clock (msec) vs. recursion depth](graphs/v0.0-tc_d.png)
+![V0.0 fuzzer: task clock (msec) vs. recursion depth](graphs/v0.0-tc_d.png)
 
 ## To Do Items
 
@@ -123,7 +123,7 @@ Maximum performant depth: $\approx 10^4$.
 
 Again, being yet to begin profiling anything at this point, graphing task-clock against recursion depth, with `V0.0` included for reference produced the following:
 
-![V0.1, V0.0 fuzzer | task clock (msec) vs. recursion depth](graphs/v0.1|v0.0-tc_d.png)
+![V0.1, V0.0 fuzzer: task clock (msec) vs. recursion depth](graphs/v0.1|v0.0-tc_d.png)
 
 # A Somewhat Solid Base `[V1.0]`
 
@@ -141,7 +141,7 @@ Maximum performant depth: $\approx 10^5$.
 
 For the last time, being yet to begin profiling anything at this point, graphing task-clock against recursion depth, with `V0.1` included for reference produced the following:
 
-![V1.0, V0.1 fuzzer | task clock (msec) vs. recursion depth](graphs/v1.0 v0.1-tc_d.png)
+![V1.0, V0.1 fuzzer: task clock (msec) vs. recursion depth](graphs/v1.0 v0.1-tc_d.png)
 
 # Initial Profiling
 
@@ -161,7 +161,7 @@ char* append(char* dest, char const* src) {
 
 The resulting improvements were again significant:
 
-![V1.0, V0.1 fuzzer | task clock (msec) vs. recursion depth](graphs/v1.1|v1.0-tc_d.png)
+![V1.0, V0.1 fuzzer: task clock (msec) vs. recursion depth](graphs/v1.1|v1.0-tc_d.png)
 
 by my own criteria, I _could_ state a maximum performant depth of $\approx 10^6$, but it doesn't feel fast enough at that depth to justify it.
 
