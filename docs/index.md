@@ -2,79 +2,171 @@
 
 <script>window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };</script>
 
-# Background
+# Entry Point
 
 The current assignment involves the creation of a (simple, so far) depth-limited grammar fuzzer that can be called reasonably performant. This task might be divided into two equally important sub-tasks:
 
-1. Developing a performant grammar data structure
-2. Developing a performant fuzzer function, preferably grammar structure-agnostic
+1. Developing a performant grammar data structure.
+2. Developing a performant fuzzer function, preferably grammar structure-agnostic.
 
-# Entry Point
+I have two things to go off at present:
 
-Choosing an entry point for documenting the challenge of interest, I'll begin at the point at which the fuzzer [repository](https://github.com/Positron11/fuzzer) first diverged into the [string fuzzer](https://github.com/Positron11/fuzzer/blob/master/fuzzer.c) and the [token fuzzer](https://github.com/Positron11/fuzzer/blob/alernate-grammar/fuzzer.c).
+1. Although it's probably much easier to write a recursive fuzzer at this stage, I want to start out iterative - common wisdom and for performance reasons down the line.
+2. I'll want to implement a depth-limiting mechanism, ie. `min_depth` and `max_depth` parameters. Again, easier to implement in a recursive variant, but I believe I've an idea.
+
+# Initial Implementation `[V0.0]`
+
+I've created the base for what what will become the fuzzer in coming iterations <sup>[[gist](https://gist.github.com/Positron11/86c9c0c98d16ad1f35019a4bd3582ef5/4e13563e1152122d79fb98dabe5e8f8cb611d8f3)]</sup>. At this point, the code is fully "functional", but that's generous. Rather heavy use of pointers doesn't seem quite right, given how convoluted some function definitions, return types in particular, have become (what even is `char *(*getopt(struct g_entry grammar[], char key[]))[]`). Performance is abysmal - the program outright crashes the IDE at a minimum recursion depth of 20.
 
 ## The Grammar
 
-My first attempt at developing a grammar structure naively imitated BNF grammar, ie. non-terminal tokens were represented as strings: `<token>`, and rules were therefore represented by C strings. The most apparent way to optimize rule lookups was by turning the grammar into a hashmap.
+```
+struct g_entry grammar[GRAMSIZE] = 
+{ 
+	(struct g_entry { .key=STARTKEY, .rcrsv=0, .optcnt=1, .options={ 
+		{ "~phn" } 
+	} },
+	(struct g_entry) { .key="~phn", .rcrsv=0, .optcnt=2, .options={ 
+		{ "~arc", " ", "~@num", "-", "~@num" }, 
+		{ "~@num", "-", "~@num" } 
+	} },
+	(struct g_entry) { .key="~arc", .rcrsv=0, .optcnt=1, .options={ 
+		{ "(+", "~dgt", "~dgt", ")" } 
+	} },
+	(struct g_entry) { .key="~@num", .rcrsv=1, .optcnt=2, .options={ 
+		{ "~dgt" }, { "~@num", "~dgt" } 
+	} },
+	(struct g_entry) { .key="~dgt", .rcrsv=0, .optcnt=10, .options={ 
+		{ "0" }, { "1" }, { "2" }, { "3" }, { "4" }, 
+		{ "5" }, { "6" }, { "7" }, { "8" }, { "9" } 
+	} }
+};
+```
+
+The grammar is defined as seen above. A `g_entry` grammar entry structure with a key, some members to hold meta information, and an options array, which contains options - arrays of tokens represented by strings (retrospective: breaking a string into substrings consisting of single characters is an... interesting approach - It's striking how close to yet how so far I was from the final grammar structure). 
 
 ## The Fuzzer
 
-The fuzzer itself (iterative), after I'd overcome the initial hurdle of not knowing C, ended up being performant up to a depth of \(10^5\). I'd also begun profiling [^1] at this point, and the primary source of overhead at this point was `strcat`. Discovering Schlemiel the Painter's Algorithm in reference to the same led to the development of a custom concatenation function (individually copying bytes via walking pointers) which boosted performance by $\approx 3000\%$ up to a maximum performant depth of $10^6$. <sup>commit [c390831](https://github.com/Positron11/fuzzer/commit/c390831b9e10fb5ee50d4d2bf2fe5e6c81f500f0)</sup>
+The fuzzer algorithm, at least how it plays out in my head is now described. The way it's actually implemented in the code at the moment is too convoluted to go into here - the reader is free to expose themselves to the source at their own leisure.
 
-## Alternative Grammar
+### Expansion Algorithm
 
-At this point, I was advised to compare my grammar structure to a token-based grammar, where non-terminals would be represented by negative integers directly corresponding with the index of their respective definitions in the grammar structure (not a hashmap this time).
+1. The fuzzer declares an expansion stack (initialized to the `start` token), a buffer (which just contains everything in the expansion stack except the first token), and an output store. 
+2. The fuzzer evaluates the first token in the stack.
+3. i. If the token is terminal, it is written to the output store and the stack is overwritten with the buffer.
+   ii. Otherwise if the token is nonterminal, a random expansion with the appropriate cost is found and overwritten onto the stack, which is then appended by the buffer
+4. This repeats until the expansion stack is empty.
 
-# Surprising Results
+### Depth Limiting Mechanism
 
-Inserting the new token grammar into the existing fuzzer algorithm had surprising results. The initial expectation was naturally that the token fuzzer would beat the string fuzzer, given the lack of string operations which were required to extract the initial segment in the string grammar fuzzer. Instead, the maximum performant depth dropped to $10^4$.
+Depth limiting is done by the use of a simple `depthlock` token - when a recursive token is encountered, a `depthlock` token is appended to the recursive token's expansion before the buffer is fnally tacked on (step 3i above). A depth counter is then incremented each iteration and checked against limits until the previously inserted `depthlock` is again encountered, at which point all recursion limit variables are reset.
 
-## Slight Improvements
+### Expansion Method Analysis
 
-Initial profiling showed that the append function carried over from the previous was the major offender in terms of overhead. Changing the manual byte-copying mechanism to `memcpy` led to a notable performance improvement, and was only 6 times slower at a depth of $10^4$, as compared to 100 times previously <sup>commit [60bb03d](https://github.com/Positron11/fuzzer/commit/60bb03dc47388e0d298270b2b5b7184e37ecf26b)</sup>. This change was subsequently ported over to the string fuzzer, improving performance slightly.
+I've rather diverged from my reference [^ifuzrf] in the expansion/parsing method. The reference presents a simple fuzzer and its shortcomings:
 
-Subsequent profiling showed that all functions defined by me no longer had any significant overhead. However, the results were even more extreme than the previous round of profiling in that a new symbol `__memmove_avx_unaligned_erms` now accounted for $\approx 97\%$ of overhead.
+1. Searches the string for tokens every iteration (inefficient as production string grows)
+2. No control over recursion depth
 
-## Alternate Fuzzer
+and then goes on to present an algorithm that explicitly constructs a derivation tree in the fuzzing process, and then converts the tree to an output string.
 
-At this point I was advised to develop recursive versions of both the token fuzzer and the string fuzzer.
+However, I believe my approach combats the shortcomings identified while also being able to work directly on the production string (expansion stack). Although it seems linear at first glance, a visual abstraction will show that my algorithm is analogous to a depth-first pre-order tree traversal implementation.
 
-# Recursive Insights
+A _very_ cursory time complexity analysis of the expansion algorithm itself puts the big-O time complexity at:
 
-To briefly summarize the results herein, each variant ordered by performance looked like so:
+$$\lt \text{O}\left(\frac{k^{h + 1} - 1}{n - 1}\right)$$
 
-$$\text{recursive token} \gt \text{iterative string} \gg \text{recursive string} \gg \text{iterative token}$$
+Where $k$ is the largest expansion (most number of nonterminals, assumed recursive) and $n$ is the `max_depth`. This is almost always likely an overestimation.
 
-This demonstrated an important point - the iterative version of the string fuzzer being faster than the recursive version meant the token fuzzer was absolutely under-performing, and due to no fault of the the grammar itself (in how it was constructed, at least).
+## Performance (Retrospective)
 
-I did also note that default stack sizes were being overrun by the program at depths $\gt 10^4$, so al considered the recursive string grammar might well be abandoned at this point.
+Maximum performant depth [^prfmdpt]: $\approx 10^3$.
 
-# Returning to Iterative
+I was yet to begin profiling anything at this point, but graphing task-clock against recursion depth produced the following:
 
-By this point, I'd begun to take efforts to increase the code parity between both iterative variants as much as possible. This being done, the confusion could be narrowed down to the fact that the string fuzzer had about twice as many calls to `memcpy` and yet ran about 100 times faster.
+![V0.0 fuzzer | task clock (msec) vs. recursion depth](graphs/v0.0-tc_d.png)
 
-Closer inspection of the trends in the benchmarking results of the iterative fuzzers ($\text{recursion depth} \in [0,10^5]$) revealed a few important points in the correlation between the `L1D` cache and performance.
+## To Do Items
 
-## Graph Interpretation
+A to-do item identified, albeit probably a "late future" one, is implementing support for grammar options - recursion limits for individual rules and expansion probabilities being among the more significant.
 
-The first observation was that while the string fuzzer maintained essentially a flat line for cache misses vs. recursion depth throughout, the token fuzzer was flat up to a depth of $4 \times 10^3$ and then suddenly shot up in a steep, rough linear increase.
+# Slight Improvements `[V0.1]`
 
-Plotting performance for both (execution time vs. recursion depth) showed a very gradual linear increase for the string fuzzer and a polynomial increase for the token fuzzer. An interesting observation here was that the token fuzzer started out as being more performant than the string fuzzer but quickly crossed over, the crossover point and the shape of both graphs bearing an not-entirely vague correspondence to the cache misses graph.
+Being well aware of the complete inadequacy of the previous fuzzer, I've decided to make a few changes <sup>[[gist](https://gist.github.com/Positron11/86c9c0c98d16ad1f35019a4bd3582ef5/a42cefcbf8f52b06bbd35cb3e8937f3d1e519ada)]</sup>. Note that somewhere among these changes is something that causes the printed output of the program to go completely haywire - sometimes. 
 
-## Uneventful Improvements
+## ... To the Grammar
 
-I attempted allocating the stack and buffer on the heap, changing the token symbol type in the token fuzzer from `int` to `signed char`, both of which had minimal to no effect.
+The way tokens are stored (single tokens aggregated into a string array) seems exceedingly wasteful, as well as difficult to read and maintain. The major change made here is that expansions are now represented as full strings:
 
-Strangely, putting the `APPEND` and `OVERWRITE` macro functions (the source of calls to `memcpy`) into regular functions did not make them show up in perf record, which still maintained an $\approx 99\%$ overhead for `__memmove_avx_unaligned_erms`.
+```
+&(Rule) { .key="<phone>", .expansions={
+	(char *[]) { "<area> <number>-<number>", "<number>-<number>", NULL }
+} },
 
-Annotating `__memmove_avx_unaligned_erms` showed that $\approx 90\%$ of the samples were recorded on `rep movsb`, where I would have expected larger byte blocks (ie. `vmovdqu` etc.).
+// [...]
 
-# Finding a Solution
+&(Rule) { .key="<number>", .expansions={
+	(char *[]) { "<digit>", NULL }, 
+	(char *[]) { "<digit><number>", NULL }
+} },
+```
 
-Having still only a vague idea of what might be causing cache misses (or, to be honest, what cache misses even are), I attempted the next thing I could think of to reduce the amount of data being moved around in each cycle of the fuzzer - a prepend mechanism to replace copying to/from a buffer <sup>commit [5ef8dd7](https://github.com/Positron11/fuzzer/commit/5ef8dd771223df9ae0042c2ffbf964f2c715c777)</sup>. 
+The tokens are now represented in the BNF format, and `.expansions` is comprised of two sub-arrays of expansions, where the first sub-array contains only cheap (non-recursive expansions) and the second contains only costly (recursive) expansions.
 
-This has had the immediate effect of slingshotting the iterative token fuzzer to first place, such that: 
+## ... To the Fuzzer
 
-$$\text{iterative token} \gt \text{recursive token} \gt \text{iterative string} \gg \text{recursive string}$$
+The fuzzer is a lot cleaner as a result of builtin string functions, and also now first sets the desired expansion cost before retrieving a random expansion, instead of poking around until it happens to find a recursive expansion, as it did previously.
 
-[^1]: All profiling unless otherwise specified was carried out using `perf stat` and `perf record`.
+## Performance (Retrospective)
+
+Maximum performant depth: $\approx 10^4$.
+
+Again, being yet to begin profiling anything at this point, graphing task-clock against recursion depth, with `V0.0` included for reference produced the following:
+
+![V0.1, V0.0 fuzzer | task clock (msec) vs. recursion depth](graphs/v0.1|v0.0-tc_d.png)
+
+# A Somewhat Solid Base `[V1.0]`
+
+This iteration is mostly improvements to the code and minor optimizations, in addition to one major change to the grammar structure <sup>[[gist](https://gist.github.com/Positron11/86c9c0c98d16ad1f35019a4bd3582ef5/9a55a09f2cf21b3b564cec1bf93c039772fd61a5)]</sup>. 
+
+The primary improvement is with regard to the grammar lookup Given I've got keys stored as strings, manually scanning the array doesn't seem the most efficient way of doing this. I've attempted to fix this using a hashtable for the grammar structure, which I did with [uthash](https://troydhanson.github.io/uthash/).
+
+Data is now statically allocated where possible so as to keep it mostly on the stack (ie. as opposed to the heap), variables are `const` qualified and `unsigned` where possible to assist the compiler in optimization, an `enum` replaces the depth lock macros, and token search uses the built-in `strcspn` instead of the slower custom `get_token` function.
+
+I've also cut down the number of secondary functions from 8 to 2 and one function-like macro, inlining functionality where possible, and my string operations are a great deal more reliable. The pointer-walking of arrays and relying on null pointers to demarcate string and array iterations are also entirely gone.
+
+## Performance (Retrospective)
+
+Maximum performant depth: $\approx 10^5$.
+
+For the last time, being yet to begin profiling anything at this point, graphing task-clock against recursion depth, with `V0.1` included for reference produced the following:
+
+![V1.0, V0.1 fuzzer | task clock (msec) vs. recursion depth](graphs/v1.0 v0.1-tc_d.png)
+
+# Initial Profiling
+
+Cursory profiling [^profmtd] to the extent I'm able to comprehend the results of which showed that the majority of execution overhead came from string functions (`strcat` in particular) <sup>[[logfile](logfiles/v1.0.data)]</sup>, which suggests either a change to the grammar or the concatenation function.
+
+## Optimizing `strcat`
+
+A brief inquiry into how `strcat` works brought up _Schlemiel the Painter's Algorithm_, and I decided to implement a custom concatenation function using pointers to keep state, that would pass only once over the length of the source array <sup>[commit: [c390831](https://github.com/Positron11/fuzzer/commit/c390831b9e10fb5ee50d4d2bf2fe5e6c81f500f0)]</sup> :
+
+```
+char* append(char* dest, char const* src) {
+     while (*dest) dest++;
+     while (*dest++ = *src++);
+     return --dest;
+}
+```
+
+The resulting improvements were again significant:
+
+![V1.0, V0.1 fuzzer | task clock (msec) vs. recursion depth](graphs/v1.1|v1.0-tc_d.png)
+
+by my own criteria, I _could_ state a maximum performant depth of $\approx 10^6$, but it doesn't feel fast enough at that depth to justify it.
+
+[^ifuzrf]: https://www.fuzzingbook.org/html/GrammarFuzzer.html
+
+[^profmtd]: All profiling unless otherwise specified was carried out using `perf stat` and `perf record`.
+
+[^prfmdpt]: Subjective value, basically the order of $10$ at which $\text{execution time} \lt 1\text{s}$
