@@ -307,31 +307,73 @@ Less importantly, I note that default stack sizes are being overrun by the progr
 
 # A Token Grammar (Pt. 2)
 
-I've take efforts to increase the code parity between `v1.2~s` and `v1.2~t` as much as possible, which are now at almost complete parity. I'll be maintaining this parity to whatever degree possible going forward. This being done, the confusion can be narrowed down to the fact that the string fuzzer has about twice as many calls to `memcpy` and yet runs about 100x faster.
+I've taken efforts to increase the code parity between `v1.2~s` and `v1.2~t` as much as possible, which are now at almost complete parity. I'll be maintaining this parity to whatever degree possible going forward. This being done, the confusion can be narrowed down to the fact that the string fuzzer has about twice as many calls to `memcpy` and yet runs about 100x faster.
 
-Closer inspection of the trends in the benchmarking results of the fuzzers ($\text{recursion depth} \in [0,10^5]$) reveals a few important points in the correlation between cache misses and performance.
+Close inspection of the trends in the benchmarking results of the fuzzers ($\text{recursion depth} \in [0,10^5]$) reveals a few important points in the correlation between cache misses and performance.
 
 ## Graph Interpretation
 
-The first observation was that while the string fuzzer maintained essentially a flat line for cache misses vs. recursion depth throughout, the token fuzzer was flat up to a depth of $4 \times 10^3$ and then suddenly shot up in a steep, rough linear increase.
+### Task Clock vs. Recursion Depth
 
-Plotting performance for both (execution time vs. recursion depth) showed a very gradual linear increase for the string fuzzer and a polynomial increase for the token fuzzer. An interesting observation here was that the token fuzzer started out as being more performant than the string fuzzer but quickly crossed over, the crossover point and the shape of both graphs bearing an not-entirely vague correspondence to the cache misses graph.
+Plotting performance for both (execution time vs. recursion depth) shows a very gradual linear increase for the string fuzzer and a polynomial increase for the token fuzzer. An interesting observation here is that the token fuzzer starts out as being more performant than the string fuzzer but quickly crosses over.
+
+![V1.2~t, V1.2~s fuzzer: task clock (msec) vs. recursion depth](graphs/v1.2~t_v1.2~s-tc_d.png)
+
+### Cache Misses vs. Recursion Depth
+
+While the string fuzzer maintains essentially a flat line for cache misses vs. recursion depth throughout, the token fuzzer is flat up to a depth of $4 \times 10^3$ and then suddenly shoots up in a steep, rough linear increase. The crossover point and the shape of the graph bears a not-entirely vague correspondence to the task clock graph.
+
+![V1.2~t, V1.2~s fuzzer: task clock (msec) vs. recursion depth](graphs/v1.2~t_v1.2~s-cm_d.png)
+
+### Task Clock vs. Cache Misses
+
+Plotting task clock against cache misses yields the following graphs:
+
+#### String Fuzzer
+
+![V1.2~t, V1.2~s fuzzer: task clock (msec) vs. recursion depth](graphs/v1.2~s-tc_cm.png)
+
+#### Token Fuzzer
+
+![V1.2~t, V1.2~s fuzzer: task clock (msec) vs. recursion depth](graphs/v1.2~t-tc_cm.png)
+
+I've included the graphs for the sake of completeness, but having at the moment no idea how CPU caches truly work, I can't do much in the way of interpreting them. 
 
 ## Uneventful Improvements
 
-I attempted allocating the stack and buffer on the heap, changing the token symbol type in the token fuzzer from `int` to `signed char`, both of which had minimal to no effect.
+I've atttmpted allocating the stack and buffer on the heap, and changing the token symbol base type in the token fuzzer from `int` to `signed char`, both of which have had minimal to no effect.
 
-Strangely, putting the `APPEND` and `OVERWRITE` macro functions (the source of calls to `memcpy`) into regular functions did not make them show up in perf record, which still maintained an $\approx 99\%$ overhead for `__memmove_avx_unaligned_erms`.
+Strangely, putting the `APPEND` and `OVERWRITE` macro functions (the source of calls to `memcpy`) into regular functions did not make them show up in `perf record`, which still maintained an $\approx 99\%$ overhead for `__memmove_avx_unaligned_erms`.
 
 Annotating `__memmove_avx_unaligned_erms` showed that $\approx 90\%$ of the samples were recorded on `rep movsb`, where I would have expected larger byte blocks (ie. `vmovdqu` etc.).
 
-# Finding a Solution
+# Finding a Solution `V1.3~t`
 
-Having still only a vague idea of what might be causing cache misses (or, to be honest, what cache misses even are), I attempted the next thing I could think of to reduce the amount of data being moved around in each cycle of the fuzzer - a prepend mechanism to replace copying to/from a buffer <sup>commit [5ef8dd7](https://github.com/Positron11/fuzzer/commit/5ef8dd771223df9ae0042c2ffbf964f2c715c777)</sup>. 
+Having still only a vague idea of what might be causing cache misses (or, to be honest, what cache misses even are), I'm attempting the next thing I can think of to reduce the amount of data being moved around in each cycle of the fuzzer - a prepend mechanism to replace copying to/from a buffer (completely: there is no longer a buffer store) <sup>[commit: [63341b8](https://github.com/Positron11/fuzzer/commit/63341b8f43eddd06c2c026bb4d27aff8b625c4f3)]</sup>:
+
+```c
+char* prepend(char target[], char* target_ptr, char const source[], size_t target_len, size_t source_len) {
+	memmove(&target[source_len], target, (target_len + 1) * sizeof(char));
+	memcpy(target, source, source_len);
+	return target + source_len + target_len;
+}
+```
 
 This has had the immediate effect of slingshotting the iterative token fuzzer to first place, such that: 
 
-$$\text{iterative token} \gt \text{recursive token} \gt \text{iterative string} \gg \text{recursive string}$$ 
+$$\text{iterative token} \gt \text{recursive token} \gt \text{iterative string} \gg \text{recursive string}$$
+
+Partly due to the success of the prepend mechanism in `V1.3~t` and mainly to maintain parity between both variants, I've implemented the prepend mechanism in the string fuzzer as well <sup>[commit: [5ef8dd7](https://github.com/Positron11/fuzzer/commit/5ef8dd771223df9ae0042c2ffbf964f2c715c777)]</sup> (`V1.3~s`).
+
+## Performance
+
+### `V1.3~t` and `V1.2~t` (Improvement)
+
+![V1.3~t, V1.2~t fuzzer: task clock (msec) vs. recursion depth](graphs/v1.3~t_v1.2~t-tc_d.png)
+
+### `V1.3~t` and `V1.3~s` (Current Standing)
+
+![V1.3~t, V1.2~t fuzzer: task clock (msec) vs. recursion depth](graphs/v1.3~t_v1.2~t-tc_d.png)
 
 [^ifuzrf]: https://www.fuzzingbook.org/html/GrammarFuzzer.html
 
