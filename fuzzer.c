@@ -55,23 +55,23 @@ int main(int argc, char *argv[]) {
 
 	// define grammar
 	Grammar grammar = { .def_count=5, .definitions=(Definition []) {
-		(Definition) { .name="start", .rule_count={1, 0}, .rules={
+		[start - start] = (Definition) { .name="start", .rule_count={1, 0}, .rules={
 			(Rule []) {
 				(Rule) { .token_count=1, .tokens=(token_t[]) {phone} }
 			}
 		} },
-		(Definition) { .name="phone", .rule_count={2, 0}, .rules={
+		[phone - start] = (Definition) { .name="phone", .rule_count={2, 0}, .rules={
 			(Rule []) {
 				(Rule) { .token_count=3, .tokens=(token_t[]){number, '-', number} },
 				(Rule) { .token_count=4, .tokens=(token_t[]){area, number, '-', number} }
 			}
 		} },
-		(Definition) { .name="area", .rule_count={1, 0}, .rules={
+		[area - start] = (Definition) { .name="area", .rule_count={1, 0}, .rules={
 			(Rule []) {
 				(Rule) { .token_count=5, .tokens=(token_t[]){'(', '+', digit, digit, ')'} }
 			}
 		} },
-		(Definition) { .name="number", .rule_count={1, 1}, .rules={
+		[number - start] = (Definition) { .name="number", .rule_count={1, 1}, .rules={
 			(Rule []) {
 				(Rule) { .token_count=1, .tokens=(token_t[]){digit} },
 			},
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 				(Rule) { .token_count=2, .tokens=(token_t[]){digit, number} }
 			}
 		} },
-		(Definition) { .name="digit", .rule_count={10, 0}, .rules={
+		[digit - start] = (Definition) { .name="digit", .rule_count={10, 0}, .rules={
 			(Rule []) {
 				(Rule) { .token_count=1, .tokens=(token_t[]){'0'} },
 				(Rule) { .token_count=1, .tokens=(token_t[]){'1'} },
