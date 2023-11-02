@@ -103,55 +103,45 @@ void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth) {
 	depth_t current_depth = 0;
 	int recursion_lock_status = 0;
 
-	// declare token, terminals, and buffer stores
-	char* tokens = malloc(2097152 * sizeof(char));
+	// declare segment store
+	char* segment = malloc(2097152 * sizeof(char));
 
 	// while stack not empty
 	while (STACK_LEN > 0) {
-		if (stack[0] != '<') { // if first token in stack is terminal
-			// slice leading nonterminal tokens out of stack
-			size_t terminals_len = strcspn(stack, "<");
-			slice(tokens, stack, 0, terminals_len);
+		int is_terminal = stack[0] != '<'; // determine if first symbol indicates non/terminal
 
-			// append terminals to output and write buffer to stack
-			out_ptr = append(out_ptr, tokens, terminals_len);
-			size_t buffer_len = STACK_LEN - terminals_len;  // get buffer length
-			OVERRWRITE(stack, stack_ptr, &stack[terminals_len], buffer_len);
+		// conditionally slice segment
+		size_t segment_len = strcspn(stack, is_terminal ? "<" : ">") + !is_terminal;
+		slice(segment, stack, 0, segment_len);
 
+		size_t buffer_len = STACK_LEN - segment_len; // get buffer length
+		OVERRWRITE(stack, stack_ptr, &stack[segment_len], buffer_len); // overrwrite stack with buffer
+
+		if (is_terminal) { // if segment comprised of terminals
+			out_ptr = append(out_ptr, segment, segment_len); // append terminals to output
 			continue;
 		}
 
-		// slice token out of stack
-		size_t token_len = strcspn(stack, ">") + 1;
-		slice(tokens, stack, 0, token_len);
-		
-		size_t buffer_len = STACK_LEN - token_len; // get buffer length
-		OVERRWRITE(stack, stack_ptr, &stack[token_len], buffer_len); // write buffer to stack
-
-		if (strcmp(tokens, DEPTH_LOCK_TOKEN) == 0) { // if current token is depth lock token...
-			// reset depth lock vars
+		if (strcmp(segment, DEPTH_LOCK_TOKEN) == 0) { // if segment is depthlock token
 			recursion_lock_status = unlocked;
 			current_depth = 0;
-			
 			continue;
 		}
 			
-		Definition* definition = get_definition(grammar, tokens); // get definition
+		Definition* definition = get_definition(grammar, segment);
 
-		// calculate cost based on depth and force low if definition not recursive
-		cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST);
-		cost = definition->rule_count[1] ? cost : LOW_COST;
+		cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST); // calculate cost based on depth
+		cost = definition->rule_count[1] ? cost : LOW_COST; // and force low if definition not recursive
 
-		// increment depth if high cost (recursive) expansion
 		if (cost == HIGH_COST) {
-			if (recursion_lock_status == unlocked) recursion_lock_status = locking;
+			if (recursion_lock_status == unlocked) recursion_lock_status = locking; // if in locking state promote to locked
 			current_depth++;
 		}
 
-		char* rule = get_rule(definition, cost); // get rule
+		char* rule = get_rule(definition, cost);
 
-		if (recursion_lock_status == locking) { // if in locking stage...
-			stack_ptr = prepend(stack, stack_ptr, DEPTH_LOCK_TOKEN, STACK_LEN, strlen(DEPTH_LOCK_TOKEN)); // ...prepend lock token to stack
+		if (recursion_lock_status == locking) {
+			stack_ptr = prepend(stack, stack_ptr, DEPTH_LOCK_TOKEN, STACK_LEN, strlen(DEPTH_LOCK_TOKEN)); // prepend depthlock token to stack
 			recursion_lock_status = locked;
 		}
 
@@ -177,7 +167,6 @@ Definition* get_definition(Definition* grammar, char key[]) {
 
 // get string segment
 void slice(char target[], char source[], size_t start, size_t end) {
-	// target = realloc(target, ((end - start) + 1) * sizeof(char));
 	memcpy(target, source + start, (end - start) * sizeof(char));
 	target[end - start] = '\0';
 }
@@ -190,7 +179,7 @@ char* append(char* target_ptr, char source[], size_t len) {
 
 // prepend to traced string
 char* prepend(char target[], char* target_ptr, char source[], size_t target_len, size_t source_len) {
-	memmove(&target[source_len], target, (target_len + 1) * sizeof(char));
-	memcpy(target, source, source_len);
+	memmove(&target[source_len], target, (target_len + 1) * sizeof(char)); // move existing contents to make space for source
+	memcpy(target, source, source_len); // copy source into created space
 	return target + source_len + target_len;
 }
