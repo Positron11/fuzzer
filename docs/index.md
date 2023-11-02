@@ -20,7 +20,7 @@ I've created the base for what what will become the fuzzer in coming iterations 
 
 ## The Grammar
 
-```
+```c
 struct g_entry grammar[GRAMSIZE] = 
 { 
 	(struct g_entry { .key=STARTKEY, .rcrsv=0, .optcnt=1, .options={ 
@@ -108,7 +108,7 @@ _**Note:** somewhere among these changes is something that causes the printed ou
 
 The way tokens are stored (single tokens aggregated into a string array) seemed exceedingly wasteful, as well as difficult to read and maintain. The major change made here is that expansions are now represented as full strings:
 
-```
+```c
 &(Rule) { .key="<phone>", .expansions={
 	(char *[]) { "<area> <number>-<number>", "<number>-<number>", NULL }
 } },
@@ -145,7 +145,7 @@ This iteration is mostly improvements to the code and minor optimizations, in ad
 
 The primary improvement is with regard to the grammar lookup Given I've got keys stored as strings, manually scanning the array doesn't seem the most efficient way of doing this. I've attempted to fix this using a hashtable for the grammar structure, which I did with [uthash](https://troydhanson.github.io/uthash/):
 
-```
+```c
 Rule start = { .key=START_TOKEN, .expansion_count={1,0}, .expansions={ 
 	(char const*[]) {"<phone>"},
 } };
@@ -163,7 +163,7 @@ HASH_ADD_INT(grammar, key, &phone);
 
 Data is now statically allocated where possible so as to keep it mostly on the stack, variables are `const` qualified and `unsigned` where possible to assist the compiler in optimization, an `enum` replaces the depth lock macros, and token search uses the built-in `strcspn` instead of the slower custom `get_token` function:
 
-```
+```c
 // before
 int get_token(char (*stack)[], char (*token)[], size_t token_size) {
 	int index = 0;
@@ -192,7 +192,7 @@ Cursory profiling [^profmtd] to the extent I'm able to comprehend the results of
 
 A brief inquiry into how `strcat` works brought up _Schlemiel the Painter's Algorithm_, and I decided to implement a custom concatenation function using pointers to keep state, that would pass only once over the length of the source array <sup>[commit: [c390831](https://github.com/Positron11/fuzzer/commit/c390831b9e10fb5ee50d4d2bf2fe5e6c81f500f0)]</sup> :
 
-```
+```c
 char* append(char* dest, char const* src) {
      while (*dest) dest++;
      while (*dest++ = *src++);
