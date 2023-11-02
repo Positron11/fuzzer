@@ -21,6 +21,9 @@
 	target_ptr = target;												\
 	target_ptr = append(target_ptr, source, len);
 
+// type definitions
+typedef size_t depth_t;
+
 // hashable rule structure
 typedef struct Definition {
 	char key[32]; // uthash hashtable key
@@ -32,7 +35,7 @@ typedef struct Definition {
 enum depth_lock_states {unlocked, locking, locked}; // depth lock states
 
 // declare functions
-void fuzzer(Definition* grammar, unsigned int min_depth, unsigned int max_depth);
+void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth);
 char* get_rule(Definition* rule, unsigned int cost);
 Definition* get_definition(Definition* grammar, char* key);
 char* append(char* target_ptr, char source[], size_t len);
@@ -70,9 +73,9 @@ int main(int argc, char *argv[]) {
 	HASH_ADD_INT(grammar, key, &digit);
 
 	// set options from command line if possible otherwise default
-	unsigned int min_depth = argc > 1 ? strtod(argv[1], 0) : 2;
-	unsigned int max_depth = argc > 1 ? (argc > 2 ? strtod(argv[2], 0) : min_depth) : 4;
-	unsigned int runs = argc > 3 ? strtod(argv[3], 0) : 1;
+	depth_t min_depth = argc > 1 ? strtod(argv[1], 0) : 2;
+	depth_t max_depth = argc > 1 ? (argc > 2 ? strtod(argv[2], 0) : min_depth) : 4;
+	depth_t runs = argc > 3 ? strtod(argv[3], 0) : 1;
 	
 	// main loop
 	for (size_t i = 0; i < runs; i++) {
@@ -83,7 +86,7 @@ int main(int argc, char *argv[]) {
 }
 
 // fuzzing function
-void fuzzer(Definition* grammar, unsigned int min_depth, unsigned int max_depth) {
+void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth) {
 	// [TODO) dynamically allocate stack and output memory
 	// declare stack and output
 	char* stack = malloc(2097152 * sizeof(char));
@@ -97,7 +100,7 @@ void fuzzer(Definition* grammar, unsigned int min_depth, unsigned int max_depth)
 
 	// recursion limit variables
 	unsigned int cost = 0;
-	unsigned int depth = 0;
+	depth_t depth = 0;
 	unsigned int recursion_lock_status = 0;
 
 	// declare token, terminals, and buffer stores
