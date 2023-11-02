@@ -371,9 +371,9 @@ Partly due to the success of the prepend mechanism in `V1.3~t` and mainly to mai
 
 ![V1.3~t, V1.2~t fuzzer: task clock (msec) vs. recursion depth](graphs/v1.3~t_v1.2~t-tc_d.png)
 
-### `V1.3~t` and `V1.3~s` (Current Standing)
+### `V1.3~t` and `V1.3~s` (Current Relative Standing)
 
-![V1.3~t, V1.2~t fuzzer: task clock (msec) vs. recursion depth](graphs/v1.3~t_v1.2~t-tc_d.png)
+![V1.3~t, V1.2~t fuzzer: task clock (msec) vs. recursion depth](graphs/v1.3~t_v1.3~s-tc_d.png)
 
 [^ifuzrf]: https://www.fuzzingbook.org/html/GrammarFuzzer.html
 
