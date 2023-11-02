@@ -46,6 +46,7 @@ struct g_entry grammar[GRAMSIZE] =
 The grammar is defined as seen above, and consists of a few key components:
 
 - `grammar`: a collection of `g_entry` structures
+
 - `g_entry`: a structure defining a grammar entry (a.k.a definition)
   - `.key`: a unique string identifier 
   - `.rcsv` and `.optcnt`: hold meta information about the entry's recursive nature and the number of unique options (a.k.a rules) the entry contains
@@ -186,7 +187,7 @@ For the last time, being yet to begin profiling anything at this point, graphing
 
 ![V1.0, V0.1 fuzzer: task clock (msec) vs. recursion depth](graphs/v1.0_v0.1-tc_d.png)
 
-# String Operations Optimization `[V1.1]`
+# String Operations Optimization `[V1.1~s]`
 
 Cursory profiling [^profmtd] to the extent I'm able to comprehend the results of which showed that the majority of execution overhead came from string functions (`strcat` in particular) <sup>[[logfile](logfiles/v1.0.data)]</sup>, which suggests either a change to the grammar or the concatenation function.
 
@@ -202,9 +203,135 @@ char* append(char* dest, char const* src) {
 
 The resulting improvements were again significant:
 
-![V1.0, V0.1 fuzzer: task clock (msec) vs. recursion depth](graphs/v1.1_v1.0-tc_d.png)
+![V1.1~s, V1.0 fuzzer: task clock (msec) vs. recursion depth](graphs/v1.1~s_v1.0-tc_d.png)
 
 by my own criteria, I _could_ state a maximum performant depth of $\approx 10^6$, but it doesn't feel fast enough at that depth to justify it.
+
+# A Token Grammar (Pt. 1)
+
+It's been suggested by my supervising professor that I consider a token-based grammar.
+
+## The New Grammar
+
+```c
+enum special {
+	start = START_TOKEN, 
+	phone, 
+	area, 
+	number, 
+	digit,
+};
+
+Grammar grammar = { .def_count=5, .definitions=(Definition []) {
+	(Definition) { .name="start", .rule_count={1, 0}, .rules={
+		(Rule []) {
+			(Rule) { .token_count=1, .tokens=(int const[]) {phone} }
+		}
+	} },
+	(Definition) { .name="phone", .rule_count={2, 0}, .rules={
+		(Rule []) {
+			(Rule) { .token_count=3, .tokens=(int const[]){number, '-', number} },
+			(Rule) { .token_count=4, .tokens=(int const[]){area, number, '-', number} }
+		}
+	} },
+	(Definition) { .name="area", .rule_count={1, 0}, .rules={
+		(Rule []) {
+			(Rule) { .token_count=5, .tokens=(int const[]){'(', '+', digit, digit, ')'} }
+		}
+	} },
+	(Definition) { .name="number", .rule_count={1, 1}, .rules={
+		(Rule []) {
+			(Rule) { .token_count=1, .tokens=(int const[]){digit} },
+		},
+		(Rule []) {
+			(Rule) { .token_count=2, .tokens=(int const[]){number, digit} }
+		}
+	} },
+	(Definition) { .name="digit", .rule_count={10, 0}, .rules={
+		(Rule []) {
+			(Rule) { .token_count=1, .tokens=(int const[]){'0'} },
+			(Rule) { .token_count=1, .tokens=(int const[]){'1'} },
+			(Rule) { .token_count=1, .tokens=(int const[]){'2'} },
+			(Rule) { .token_count=1, .tokens=(int const[]){'3'} },
+			(Rule) { .token_count=1, .tokens=(int const[]){'4'} },
+			(Rule) { .token_count=1, .tokens=(int const[]){'5'} },
+			(Rule) { .token_count=1, .tokens=(int const[]){'6'} },
+			(Rule) { .token_count=1, .tokens=(int const[]){'7'} },
+			(Rule) { .token_count=1, .tokens=(int const[]){'8'} },
+			(Rule) { .token_count=1, .tokens=(int const[]){'9'} },
+		}
+	} }
+} };
+```
+
+The token grammar is constructed as shown above. You will notice that the names of the component structures are finally correct. The grammar consists of the following:
+
+- `grammar`: a `Grammar` structure instance
+  - `.def_count`: keeps count of the number of definitions contained within the grammar
+  - `.definitions`: array of `Definition` structures
+
+- `Definition`: structure that defines a set of rules for a given non-terminal token
+  - `.name`: rather pointless, actually
+  - `.rule_count`: `size_t[2]` array where:
+    - `.rule_count[0]`: number of non-recursive (cheap) rules
+    - `.rule_count[1]`: number of recursive (costly) rules
+  - `.rules`: array of `Rule` structures
+
+- `Rule`: the actual expansion of a given non-terminal token
+  - `.token_count`: count of how many individual tokens the rule contains 
+- `.tokens`: `int[]` array of tokens, where non-terminal tokens are represented by a negative number corresponding to their index in `grammar.definitions`, and terminal tokens by their ASCII code (represented as single characters in the code itself).
+
+## Surprising Results `V1.1~t`
+
+Inserting the new token grammar into the existing fuzzer algorithm has surprising results. The initial expectation is naturally that the token fuzzer would beat the string fuzzer (`V1.1~s`), given the lack of expensive string operations which were required to extract the initial segment in the string grammar fuzzer. Instead, the maximum performant depth has dropped to $10^4$.
+
+## Slight Improvements `V1.2~t`
+
+Initial profiling shows that the append function carried over from `V1.1~s` was the major offender in terms of overhead. Changing the manual byte-copying mechanism to `memcpy` leads to a notable performance improvement, and is only 6 times slower at a depth of $10^4$, as compared to 100 times previously <sup>[commit: [60bb03d](https://github.com/Positron11/fuzzer/commit/60bb03dc47388e0d298270b2b5b7184e37ecf26b)]</sup>. I've ported this change over to the string fuzzer <sup>[commit: [105cde1](https://github.com/Positron11/fuzzer/commit/105cde102a7891ac6450624e2d8a21d3be483480)]</sup>, improving performance slightly (`V1.2~s`).
+
+Subsequent profiling shows that none of the functions I've defined have any significant overhead anymore. However, the results are even more extreme than the previous round of profiling in that a new symbol `__memmove_avx_unaligned_erms` now accounts for $\approx 97\%$ of overhead <sup>[[logfile](logfiles/v1.2~t.data)]</sup>.
+
+# Recursive Interlude
+
+I've been advised by my supervising professor to develop recursive versions of both the string fuzzer <sup>[commit: [704560a](https://github.com/Positron11/fuzzer/commit/704560a83056b06e67cb825953a64827ca7345a0)]</sup> and the token fuzzer <sup>[commit: [cb6f133](https://github.com/Positron11/fuzzer/commit/cb6f133707380b349881950ec1608d38b6fe986d)]</sup>.
+
+## Recursive Insights
+
+To briefly summarize the results herein, each variant ordered by performance looked like so:
+
+$$\text{recursive token} \gt \text{iterative string} \gg \text{recursive string} \gg \text{iterative token}$$
+
+This, to me, demonstrates an important point - the iterative string fuzzer being faster than the recursive version meant the token fuzzer is absolutely under-performing, and due to no fault of the the grammar itself (in how it's constructed, at least).
+
+Less importantly, I note that default stack sizes are being overrun by the program at $\text{depth} \gt 10^4$, so all considered the recursive string grammar might well be abandoned.
+
+# A Token Grammar (Pt. 2)
+
+I've take efforts to increase the code parity between `v1.2~s` and `v1.2~t` as much as possible, which are now at almost complete parity. I'll be maintaining this parity to whatever degree possible going forward. This being done, the confusion can be narrowed down to the fact that the string fuzzer has about twice as many calls to `memcpy` and yet runs about 100x faster.
+
+Closer inspection of the trends in the benchmarking results of the fuzzers ($\text{recursion depth} \in [0,10^5]$) reveals a few important points in the correlation between cache misses and performance.
+
+## Graph Interpretation
+
+The first observation was that while the string fuzzer maintained essentially a flat line for cache misses vs. recursion depth throughout, the token fuzzer was flat up to a depth of $4 \times 10^3$ and then suddenly shot up in a steep, rough linear increase.
+
+Plotting performance for both (execution time vs. recursion depth) showed a very gradual linear increase for the string fuzzer and a polynomial increase for the token fuzzer. An interesting observation here was that the token fuzzer started out as being more performant than the string fuzzer but quickly crossed over, the crossover point and the shape of both graphs bearing an not-entirely vague correspondence to the cache misses graph.
+
+## Uneventful Improvements
+
+I attempted allocating the stack and buffer on the heap, changing the token symbol type in the token fuzzer from `int` to `signed char`, both of which had minimal to no effect.
+
+Strangely, putting the `APPEND` and `OVERWRITE` macro functions (the source of calls to `memcpy`) into regular functions did not make them show up in perf record, which still maintained an $\approx 99\%$ overhead for `__memmove_avx_unaligned_erms`.
+
+Annotating `__memmove_avx_unaligned_erms` showed that $\approx 90\%$ of the samples were recorded on `rep movsb`, where I would have expected larger byte blocks (ie. `vmovdqu` etc.).
+
+# Finding a Solution
+
+Having still only a vague idea of what might be causing cache misses (or, to be honest, what cache misses even are), I attempted the next thing I could think of to reduce the amount of data being moved around in each cycle of the fuzzer - a prepend mechanism to replace copying to/from a buffer <sup>commit [5ef8dd7](https://github.com/Positron11/fuzzer/commit/5ef8dd771223df9ae0042c2ffbf964f2c715c777)</sup>. 
+
+This has had the immediate effect of slingshotting the iterative token fuzzer to first place, such that: 
+
+$$\text{iterative token} \gt \text{recursive token} \gt \text{iterative string} \gg \text{recursive string}$$ 
 
 [^ifuzrf]: https://www.fuzzingbook.org/html/GrammarFuzzer.html
 
