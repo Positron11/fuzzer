@@ -36,7 +36,7 @@ enum depth_lock_states {unlocked, locking, locked}; // depth lock states
 
 // declare functions
 void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth);
-char* get_rule(Definition* rule, unsigned int cost);
+char* get_rule(Definition* rule, int cost);
 Definition* get_definition(Definition* grammar, char* key);
 char* append(char* target_ptr, char source[], size_t len);
 void slice(char target[], char source[], size_t start, size_t end);
@@ -99,9 +99,9 @@ void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth) {
 	OVERRWRITE(stack, stack_ptr, START_TOKEN, strlen(START_TOKEN)); // initialize stack
 
 	// recursion limit variables
-	unsigned int cost = 0;
-	depth_t depth = 0;
-	unsigned int recursion_lock_status = 0;
+	int cost = 0;
+	depth_t current_depth = 0;
+	int recursion_lock_status = 0;
 
 	// declare token, terminals, and buffer stores
 	char* tokens = malloc(2097152 * sizeof(char));
@@ -119,19 +119,19 @@ void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth) {
 			if (strcmp(tokens, DEPTH_LOCK_TOKEN) == 0) { // if current token is depth lock token...
 				// reset depth lock vars
 				recursion_lock_status = unlocked;
-				depth = 0;
+				current_depth = 0;
 
 			} else { // ...otherwise if current token is expandable
 				Definition* definition = get_definition(grammar, tokens); // get definition
 
 				// calculate cost based on depth and force low if definition not recursive
-				unsigned int cost = depth < min_depth ? HIGH_COST : (depth >= max_depth ? LOW_COST : RAND_COST);
+				cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST);
 				cost = definition->rule_count[1] ? cost : LOW_COST;
 
 				// increment depth if high cost (recursive) expansion
 				if (cost == HIGH_COST) {
 					if (recursion_lock_status == unlocked) recursion_lock_status = locking;
-					depth++;
+					current_depth++;
 				}
 
 				char* rule = get_rule(definition, cost); // get rule
@@ -160,7 +160,7 @@ void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth) {
 }
 
 // get rule from definition
-char* get_rule(Definition* definition, unsigned int cost) {
+char* get_rule(Definition* definition, int cost) {
 	// [TODO) use a faster random number generator (SFMT?)
 	size_t choice = rand() % definition->rule_count[cost]; // random value between 0 and rule count for given cost
 	return definition->rules[cost][choice];
