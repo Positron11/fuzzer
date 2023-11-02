@@ -40,7 +40,7 @@ typedef struct Grammar {
 	Definition* definitions;
 } Grammar;
 
-// enumeratedants
+// enumerated constants
 enum depth_lock_states {unlocked, locking, locked};
 enum nonterminals {start = SCHAR_MIN, phone, area, number, digit, depthlock};
 
