@@ -82,7 +82,7 @@ However, I believe my approach combats the shortcomings identified while also be
 
 A _very_ cursory time complexity analysis of the expansion algorithm itself puts the big-O time complexity at:
 
-$$\lt \text{O}\left(\frac{k^{h + 1} - 1}{n - 1}\right)$$
+$$\lt \text{O}\left(\frac{k^{n + 1} - 1}{n - 1}\right)$$
 
 Where $k$ is the largest expansion (most number of nonterminals, assumed recursive) and $n$ is the `max_depth`. This is almost always likely an overestimation.
 
