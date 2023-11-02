@@ -4,7 +4,7 @@
 
 # Starting Out
 
-The current assignment involves the creation of a (simple, so far) depth-limited grammar fuzzer that can be called reasonably performant. This task might be divided into two equally important sub-tasks:
+The current assignment involves the creation of a simple depth-limited grammar fuzzer that can be called reasonably performant. This task might be divided into two equally important sub-tasks:
 
 1. Developing a performant grammar data structure.
 2. Developing a performant fuzzer function, preferably grammar structure-agnostic.
@@ -43,23 +43,31 @@ struct g_entry grammar[GRAMSIZE] =
 };
 ```
 
-The grammar is defined as seen above. A `g_entry` grammar entry structure with a key, some members to hold meta information, and an options array, which contains options - arrays of tokens represented by strings (retrospective: breaking a string into substrings consisting of single characters is an... interesting approach - It's striking how close to yet how so far I was from the final grammar structure). 
+The grammar is defined as seen above, and consists of a few key components:
+
+- `grammar`: a collection of `g_entry` structures
+- `g_entry`: a structure defining a grammar entry (a.k.a definition)
+  - `.key`: a unique string identifier 
+  - `.rcsv` and `.optcnt`: hold meta information about the entry's recursive nature and the number of unique options (a.k.a rules) the entry contains
+  - `.options`: an array which contains options, ie. arrays of tokens represented by strings. 
+
+_**Retrospect:** breaking a string into substrings consisting of single characters is an... interesting approach - It's striking how close to yet how so far I was from the final grammar structure)._ 
 
 ## The Fuzzer
 
-The fuzzer algorithm, at least how it plays out in my head is now described. The way it's actually implemented in the code at the moment is too convoluted to go into here - the reader is free to expose themselves to the source at their own leisure.
+The fuzzer algorithm, or at least how it plays out in my head, is now described. The way it's actually implemented in the code at the moment is too convoluted to go into here - the reader is free to expose themselves to the source at their own leisure.
 
 ### Expansion Algorithm
 
 1. The fuzzer declares an expansion stack (initialized to the `start` token), a buffer (which just contains everything in the expansion stack except the first token), and an output store. 
 2. The fuzzer evaluates the first token in the stack.
 3. i. If the token is terminal, it is written to the output store and the stack is overwritten with the buffer.
-   ii. Otherwise if the token is nonterminal, a random expansion with the appropriate cost is found and overwritten onto the stack, which is then appended by the buffer
+   ii. Otherwise if the token is nonterminal, a random option with the appropriate cost is found and overwritten onto the stack, which is then appended by the buffer
 4. This repeats until the expansion stack is empty.
 
 ### Depth Limiting Mechanism
 
-Depth limiting is done by the use of a simple `depthlock` token - when a recursive token is encountered, a `depthlock` token is appended to the recursive token's expansion before the buffer is fnally tacked on (step 3i above). A depth counter is then incremented each iteration and checked against limits until the previously inserted `depthlock` is again encountered, at which point all recursion limit variables are reset.
+Depth limiting is done by the use of a simple `depthlock` token - when a recursive token is encountered, a `depthlock` token is appended to the recursive token's expansion before the buffer is fnally tacked on (step _3i_ above). A depth counter is then incremented each iteration and checked against limits until the previously inserted `depthlock` is again encountered, at which point all recursion limit variables are reset.
 
 ### Expansion Method Analysis
 
@@ -80,7 +88,7 @@ Where $k$ is the largest expansion (most number of nonterminals, assumed recursi
 
 ## Performance (Retrospective)
 
-Maximum performant depth [^prfmdpt]: $\approx 10^3$.
+Maximum performant depth: $\approx 10^3$. [^prfmdpt]
 
 I was yet to begin profiling anything at this point, but graphing task-clock against recursion depth produced the following:
 
@@ -92,11 +100,13 @@ A to-do item identified, albeit probably a "late future" one, is implementing su
 
 # Slight Improvements `[V0.1]`
 
-Being well aware of the complete inadequacy of the previous fuzzer, I've decided to make a few changes <sup>[[gist](https://gist.github.com/Positron11/86c9c0c98d16ad1f35019a4bd3582ef5/a42cefcbf8f52b06bbd35cb3e8937f3d1e519ada)]</sup>. Note that somewhere among these changes is something that causes the printed output of the program to go completely haywire - sometimes. 
+Being well aware of the complete inadequacy of the previous fuzzer, I've decided to make a few changes <sup>[[gist](https://gist.github.com/Positron11/86c9c0c98d16ad1f35019a4bd3582ef5/a42cefcbf8f52b06bbd35cb3e8937f3d1e519ada)]</sup>. 
+
+_**Note:** somewhere among these changes is something that causes the printed output of the program to go completely haywire - sometimes._ 
 
 ## ... To the Grammar
 
-The way tokens are stored (single tokens aggregated into a string array) seems exceedingly wasteful, as well as difficult to read and maintain. The major change made here is that expansions are now represented as full strings:
+The way tokens are stored (single tokens aggregated into a string array) seemed exceedingly wasteful, as well as difficult to read and maintain. The major change made here is that expansions are now represented as full strings:
 
 ```
 &(Rule) { .key="<phone>", .expansions={
@@ -111,11 +121,15 @@ The way tokens are stored (single tokens aggregated into a string array) seems e
 } },
 ```
 
-The tokens are now represented in the BNF format, and `.expansions` is comprised of two sub-arrays of expansions, where the first sub-array contains only cheap (non-recursive expansions) and the second contains only costly (recursive) expansions.
+The tokens are now represented in the BNF format (`<nonterminal>`). `g_entry` has been renamed to `Rule` and simplified. `.options` has been renamed to `.expansions` which is now comprised of two sub-arrays of string expansions where the first sub-array contains only cheap (non-recursive expansions) and the second contains only costly (recursive) expansions. I could get therefore get rid of `.rcrsv` (can just check if `grammar.expansions[1]` exists) and `.optcount` (no longer applicable)
+
+Expansions being strings does of course introduce some computational overhead in the form of the string parsing that now needs to be done to extract tokens.
+
+_**Retrospect:** renamed pretty much everything, but everything's still incorrectly named, nice going_
 
 ## ... To the Fuzzer
 
-The fuzzer is a lot cleaner as a result of builtin string functions, and also now first sets the desired expansion cost before retrieving a random expansion, instead of poking around until it happens to find a recursive expansion, as it did previously.
+The fuzzer is a lot cleaner as a result of built-in string functions, and also now first sets the desired expansion cost before retrieving a random expansion, instead of poking around until it happens to find a recursive expansion, as it did previously.
 
 ## Performance (Retrospective)
 
@@ -129,11 +143,40 @@ Again, being yet to begin profiling anything at this point, graphing task-clock 
 
 This iteration is mostly improvements to the code and minor optimizations, in addition to one major change to the grammar structure <sup>[[gist](https://gist.github.com/Positron11/86c9c0c98d16ad1f35019a4bd3582ef5/9a55a09f2cf21b3b564cec1bf93c039772fd61a5)]</sup>. 
 
-The primary improvement is with regard to the grammar lookup Given I've got keys stored as strings, manually scanning the array doesn't seem the most efficient way of doing this. I've attempted to fix this using a hashtable for the grammar structure, which I did with [uthash](https://troydhanson.github.io/uthash/).
+The primary improvement is with regard to the grammar lookup Given I've got keys stored as strings, manually scanning the array doesn't seem the most efficient way of doing this. I've attempted to fix this using a hashtable for the grammar structure, which I did with [uthash](https://troydhanson.github.io/uthash/):
 
-Data is now statically allocated where possible so as to keep it mostly on the stack (ie. as opposed to the heap), variables are `const` qualified and `unsigned` where possible to assist the compiler in optimization, an `enum` replaces the depth lock macros, and token search uses the built-in `strcspn` instead of the slower custom `get_token` function.
+```
+Rule start = { .key=START_TOKEN, .expansion_count={1,0}, .expansions={ 
+	(char const*[]) {"<phone>"},
+} };
+Rule phone = { .key="<phone>", .expansion_count={2,0}, .expansions={ 
+	(char const*[]) {"<area><number>-<number>", "<number>-<number>"},
+} };	
 
-I've also cut down the number of secondary functions from 8 to 2 and one function-like macro, inlining functionality where possible, and my string operations are a great deal more reliable. The pointer-walking of arrays and relying on null pointers to demarcate string and array iterations are also entirely gone.
+// [...]
+	
+HASH_ADD_INT(grammar, key, &start);
+HASH_ADD_INT(grammar, key, &phone);
+
+// [...]
+```
+
+Data is now statically allocated where possible so as to keep it mostly on the stack, variables are `const` qualified and `unsigned` where possible to assist the compiler in optimization, an `enum` replaces the depth lock macros, and token search uses the built-in `strcspn` instead of the slower custom `get_token` function:
+
+```
+// before
+int get_token(char (*stack)[], char (*token)[], size_t token_size) {
+	int index = 0;
+	for (size_t i = 0; (*stack)[i] != '>'; i++) index++;
+	slice(*stack, *token, token_size, 0, ++index);
+	return index;
+}
+
+// now
+SLICE(token, stack, 0, strcspn(stack, ">") + 1);
+```
+
+I've also cut down the number of secondary functions from 8 to 2 and one function-like macro, inlining one-off functionality where possible (`is_nonterminal`, `get_token`, `is_recursive` etc.), and my string operations are a great deal more reliable. The pointer-walking of arrays and relying on null pointers to demarcate string and array iterations are also entirely gone.
 
 ## Performance (Retrospective)
 
@@ -143,11 +186,9 @@ For the last time, being yet to begin profiling anything at this point, graphing
 
 ![V1.0, V0.1 fuzzer: task clock (msec) vs. recursion depth](graphs/v1.0_v0.1-tc_d.png)
 
-# Initial Profiling
+# String Operations Optimization `[V1.1]`
 
 Cursory profiling [^profmtd] to the extent I'm able to comprehend the results of which showed that the majority of execution overhead came from string functions (`strcat` in particular) <sup>[[logfile](logfiles/v1.0.data)]</sup>, which suggests either a change to the grammar or the concatenation function.
-
-## Optimizing `strcat`
 
 A brief inquiry into how `strcat` works brought up _Schlemiel the Painter's Algorithm_, and I decided to implement a custom concatenation function using pointers to keep state, that would pass only once over the length of the source array <sup>[commit: [c390831](https://github.com/Positron11/fuzzer/commit/c390831b9e10fb5ee50d4d2bf2fe5e6c81f500f0)]</sup> :
 
