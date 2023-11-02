@@ -108,43 +108,7 @@ void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth) {
 
 	// while stack not empty
 	while (STACK_LEN > 0) {
-		if (stack[0] == '<') { // if first token in stack indicates nonterminal...
-			// slice token out of stack
-			size_t token_len = strcspn(stack, ">") + 1;
-			slice(tokens, stack, 0, token_len);
-			
-			size_t buffer_len = STACK_LEN - token_len; // get buffer length
-			OVERRWRITE(stack, stack_ptr, &stack[token_len], buffer_len); // write buffer to stack
-
-			if (strcmp(tokens, DEPTH_LOCK_TOKEN) == 0) { // if current token is depth lock token...
-				// reset depth lock vars
-				recursion_lock_status = unlocked;
-				current_depth = 0;
-
-			} else { // ...otherwise if current token is expandable
-				Definition* definition = get_definition(grammar, tokens); // get definition
-
-				// calculate cost based on depth and force low if definition not recursive
-				cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST);
-				cost = definition->rule_count[1] ? cost : LOW_COST;
-
-				// increment depth if high cost (recursive) expansion
-				if (cost == HIGH_COST) {
-					if (recursion_lock_status == unlocked) recursion_lock_status = locking;
-					current_depth++;
-				}
-
-				char* rule = get_rule(definition, cost); // get rule
-
-				if (recursion_lock_status == locking) { // if in locking stage...
-					stack_ptr = prepend(stack, stack_ptr, DEPTH_LOCK_TOKEN, STACK_LEN, strlen(DEPTH_LOCK_TOKEN)); // ...prepend lock token to stack
-					recursion_lock_status = locked;
-				}
-
-				stack_ptr = prepend(stack, stack_ptr, rule, STACK_LEN, strlen(rule)); // prepend rule to stack
-			}
-
-		} else { // ...otherwise if first token in stack is terminal
+		if (stack[0] != '<') { // if first token in stack is terminal
 			// slice leading nonterminal tokens out of stack
 			size_t terminals_len = strcspn(stack, "<");
 			slice(tokens, stack, 0, terminals_len);
@@ -153,7 +117,45 @@ void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth) {
 			out_ptr = append(out_ptr, tokens, terminals_len);
 			size_t buffer_len = STACK_LEN - terminals_len;  // get buffer length
 			OVERRWRITE(stack, stack_ptr, &stack[terminals_len], buffer_len);
+
+			continue;
 		}
+
+		// slice token out of stack
+		size_t token_len = strcspn(stack, ">") + 1;
+		slice(tokens, stack, 0, token_len);
+		
+		size_t buffer_len = STACK_LEN - token_len; // get buffer length
+		OVERRWRITE(stack, stack_ptr, &stack[token_len], buffer_len); // write buffer to stack
+
+		if (strcmp(tokens, DEPTH_LOCK_TOKEN) == 0) { // if current token is depth lock token...
+			// reset depth lock vars
+			recursion_lock_status = unlocked;
+			current_depth = 0;
+			
+			continue;
+		}
+			
+		Definition* definition = get_definition(grammar, tokens); // get definition
+
+		// calculate cost based on depth and force low if definition not recursive
+		cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST);
+		cost = definition->rule_count[1] ? cost : LOW_COST;
+
+		// increment depth if high cost (recursive) expansion
+		if (cost == HIGH_COST) {
+			if (recursion_lock_status == unlocked) recursion_lock_status = locking;
+			current_depth++;
+		}
+
+		char* rule = get_rule(definition, cost); // get rule
+
+		if (recursion_lock_status == locking) { // if in locking stage...
+			stack_ptr = prepend(stack, stack_ptr, DEPTH_LOCK_TOKEN, STACK_LEN, strlen(DEPTH_LOCK_TOKEN)); // ...prepend lock token to stack
+			recursion_lock_status = locked;
+		}
+
+		stack_ptr = prepend(stack, stack_ptr, rule, STACK_LEN, strlen(rule)); // prepend rule to stack
 	}
 
 	printf("%s\n", output); // print output
