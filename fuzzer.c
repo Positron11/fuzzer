@@ -4,37 +4,33 @@
 #include <time.h>
 #include "uthash.h"
 
-// token definitions
 #define START_TOKEN "<start>"
+#define START_TOKEN_LEN 7
 #define DEPTH_LOCK_TOKEN "<dlock>"
+#define DEPTH_LOCK_TOKEN_LEN 7
 
-// expansion cost definitions
 #define LOW_COST 0
 #define HIGH_COST 1
 #define RAND_COST rand() % 2
 
-// computed definitions
-#define STACK_LEN stack_ptr - stack
+#define STACK_LEN stack_ptr - stack //  (jank, but I'll keep it for now)
 
-// overrwrite string using append function-like macro
-#define OVERRWRITE(target, target_ptr, source, len)						\
-	target_ptr = target;												\
+// append function augmenter
+#define OVERRWRITE(target, target_ptr, source, len)			\
+	target_ptr = target;									\
 	target_ptr = append(target_ptr, source, len);
 
-// type definitions
 typedef size_t depth_t;
 
-// hashable rule structure
 typedef struct Definition {
-	char key[32]; // uthash hashtable key
-	size_t rule_count[2]; // count of expansion options
-	char** rules[2]; // expansion options ([0]: cheap, [1]: costly)
+	char key[32];
+	size_t rule_count[2];
+	char** rules[2]; // [0]: cheap, [1]: costly
 	UT_hash_handle hh;
 } Definition;
 
-enum depth_lock_states {unlocked, locking, locked}; // depth lock states
+enum depth_lock_states {unlocked, locking, locked};
 
-// declare functions
 void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth);
 char* get_rule(Definition* rule, int cost);
 Definition* get_definition(Definition* grammar, char* key);
@@ -45,9 +41,8 @@ char* prepend(char target[], char* target_ptr, char source[], size_t target_len,
 int main(int argc, char *argv[]) {
 	srand((unsigned) time(0)); // initialize random
 
-	Definition* grammar = {0}; // declare grammar as pointers to rules
+	Definition* grammar = {0};
 
-	// define grammar rules
 	Definition start = { .key=START_TOKEN, .rule_count={1,0}, .rules={ 
 		(char*[]) {"<phone>"},
 	} };
@@ -65,7 +60,6 @@ int main(int argc, char *argv[]) {
 		(char*[]) {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"},
 	} };
 	
-	// add rules to grammar
 	HASH_ADD_INT(grammar, key, &start);
 	HASH_ADD_INT(grammar, key, &phone);
 	HASH_ADD_INT(grammar, key, &area);
@@ -77,52 +71,48 @@ int main(int argc, char *argv[]) {
 	depth_t max_depth = argc > 1 ? (argc > 2 ? strtod(argv[2], 0) : min_depth) : 4;
 	depth_t runs = argc > 3 ? strtod(argv[3], 0) : 1;
 	
-	// main loop
-	for (size_t i = 0; i < runs; i++) {
-		fuzzer(grammar, min_depth, max_depth);
-	}
+	for (size_t i = 0; i < runs; i++) fuzzer(grammar, min_depth, max_depth);
 
 	return EXIT_SUCCESS;
 }
 
-// fuzzing function
+// main fuzzing function
 void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth) {
-	// [TODO) dynamically allocate stack and output memory
-	// declare stack and output
 	char* stack = malloc(2097152 * sizeof(char));
 	char* output = malloc(2097152 * sizeof(char));
 
-	// set array pointers for efficient concatenation
+	// set chaser pointers for efficient concatenation
 	char* stack_ptr = stack;
 	char* out_ptr = output;
 
-	OVERRWRITE(stack, stack_ptr, START_TOKEN, strlen(START_TOKEN)); // initialize stack
+	OVERRWRITE(stack, stack_ptr, START_TOKEN, START_TOKEN_LEN); // initialize stack with start token
 
 	// recursion limit variables
-	int cost = 0;
-	depth_t current_depth = 0;
 	int recursion_lock_status = 0;
+	depth_t current_depth = 0;
+	int cost = 0;
 
-	// declare segment store
-	char* segment = malloc(2097152 * sizeof(char));
+	char* segment = malloc(2097152 * sizeof(char)); // declare segment store
 
-	// while stack not empty
+	// while stack not empty...
 	while (STACK_LEN > 0) {
 		int is_terminal = stack[0] != '<'; // determine if first symbol indicates non/terminal
 
-		// conditionally slice segment
+		// conditionally slice active segment
 		size_t segment_len = strcspn(stack, is_terminal ? "<" : ">") + !is_terminal;
 		slice(segment, stack, 0, segment_len);
 
 		size_t buffer_len = STACK_LEN - segment_len; // get buffer length
 		OVERRWRITE(stack, stack_ptr, &stack[segment_len], buffer_len); // overrwrite stack with buffer
 
-		if (is_terminal) { // if segment comprised of terminals
-			out_ptr = append(out_ptr, segment, segment_len); // append terminals to output
+		// if segment comprised of terminals append terminals to output
+		if (is_terminal) {
+			out_ptr = append(out_ptr, segment, segment_len);
 			continue;
 		}
 
-		if (strcmp(segment, DEPTH_LOCK_TOKEN) == 0) { // if segment is depthlock token
+		// if segment is depthlock token reset recursion lock vars
+		if (strcmp(segment, DEPTH_LOCK_TOKEN) == 0) {
 			recursion_lock_status = unlocked;
 			current_depth = 0;
 			continue;
@@ -130,30 +120,29 @@ void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth) {
 			
 		Definition* definition = get_definition(grammar, segment);
 
-		cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST); // calculate cost based on depth
-		cost = definition->rule_count[1] ? cost : LOW_COST; // and force low if definition not recursive
+		cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST); // calculate cost based on depth...
+		cost = definition->rule_count[1] ? cost : LOW_COST; // ...and force low if definition not recursive
 
 		if (cost == HIGH_COST) {
-			if (recursion_lock_status == unlocked) recursion_lock_status = locking; // if in locking state promote to locked
+			if (recursion_lock_status == unlocked) recursion_lock_status = locking;
 			current_depth++;
 		}
 
 		char* rule = get_rule(definition, cost);
 
 		if (recursion_lock_status == locking) {
-			stack_ptr = prepend(stack, stack_ptr, DEPTH_LOCK_TOKEN, STACK_LEN, strlen(DEPTH_LOCK_TOKEN)); // prepend depthlock token to stack
+			stack_ptr = prepend(stack, stack_ptr, DEPTH_LOCK_TOKEN, STACK_LEN, DEPTH_LOCK_TOKEN_LEN); // prepend depthlock token to stack
 			recursion_lock_status = locked;
 		}
 
 		stack_ptr = prepend(stack, stack_ptr, rule, STACK_LEN, strlen(rule)); // prepend rule to stack
 	}
 
-	printf("%s\n", output); // print output
+	printf("%s\n", output);
 }
 
 // get rule from definition
 char* get_rule(Definition* definition, int cost) {
-	// [TODO) use a faster random number generator (SFMT?)
 	size_t choice = rand() % definition->rule_count[cost]; // random value between 0 and rule count for given cost
 	return definition->rules[cost][choice];
 }
