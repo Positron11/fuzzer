@@ -37,14 +37,6 @@ grammar = {
 	]
 }
 
-def is_nonterminal(token):
-	return token[0] == "<" and token[-1] == ">"
-
-
-def nonterminals(rule):
-	return set([token for token in rule if is_nonterminal(token)])
-
-
 def byteify(grammar):
 	new_grammar = dict()
 	for definition in grammar:
@@ -59,12 +51,20 @@ def cheapen(grammar):
 	return new_grammar
 
 
-def generate_src_cheap(key, grammar):
+def gen_src(key, grammar, cheap=False):
+	if cheap: grammar = cheapen(grammar)
 	rule_count = len(grammar[key])
-				  
-	out = f"def gen_{key[1:-1]}_cheap():\n" \
-		  f"\tval = random.randrange({rule_count})\n"
-	
+
+	if cheap:
+		out = f"def gen_{key[1:-1]}_cheap():\n" 			\
+			  f"\tval = random.randrange({rule_count})\n"
+	else:
+		out = f"def gen_{key[1:-1]}(max_depth, depth=0):\n"	\
+			  f"\tif depth > max_depth:\n"					\
+			  f"\t\tgen_{key[1:-1]}_cheap()\n"				\
+			  f"\t\treturn\n"								\
+			  f"\tval = random.randrange({rule_count})\n"
+		
 	for i in range(rule_count):
 		out += f"\tif val == {i}:\n"
 		
@@ -72,11 +72,14 @@ def generate_src_cheap(key, grammar):
 			if isinstance(token, int):
 				out += f"\t\tresult.append({token})\n"
 			else:
-				out += f"\t\tgen_{token[1:-1]}_cheap()\n"
+				if cheap: out += f"\t\tgen_{token[1:-1]}_cheap()\n"
+				else: out += f"\t\tgen_{token[1:-1]}(max_depth, depth + 1)\n"
+
+		out += f"\t\treturn\n"
 
 	return out
 
 
-new_grammar = cheapen(byteify(grammar))
+new_grammar = byteify(grammar)
 for key in new_grammar:
-	print(f"{generate_src_cheap(key, new_grammar)}\n")
+	print(f"{gen_src(key, new_grammar)}\n")
