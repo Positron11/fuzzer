@@ -23,3 +23,4 @@ pre { padding: 1em; max-height: 500px; overflow: auto; }
 .md-fn-count { font-weight: bold; }
 
 img { max-width: 100%; border: 1px solid #d7d7db; border-radius: 0.5em; }
+svg { max-width: 100%; overflow: hidden; }
