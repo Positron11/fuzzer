@@ -17,8 +17,8 @@ def nonterminals(rule):
 
 
 # identify vicious token rings
-def reprehensible(rule, definition, grammar, visited=None):
-	if visited is None: visited = [definition]
+def reprehensible(rule, key, grammar, visited=None):
+	if visited is None: visited = [key]
 	nonterms = nonterminals(rule)
 
 	# if rule consists entirely of terminals (ie. the path has terminated) mark as non-reprehensible
@@ -54,8 +54,8 @@ def byteify(grammar):
 def cheapen(grammar):
 	new_grammar = dict();	
 	
-	for definition in grammar:
-		new_grammar[definition] = [rule for rule in grammar[definition] if not reprehensible(rule, definition, grammar)]
+	for key in grammar:
+		new_grammar[key] = [rule for rule in grammar[key] if not reprehensible(rule, key, grammar)]
 	
 	return new_grammar
 
