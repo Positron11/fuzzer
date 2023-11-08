@@ -50,6 +50,11 @@ def cheapen(grammar):
 	return new_grammar
 
 
+# convert token to valid function name segment
+def sanitize(token):
+	return token[1:-1].replace('-', '_')
+
+
 # generate compiled fuzzer core source by cost
 def gen_def_src(key, grammar, cheap=False):
 	if cheap: grammar = cheapen(grammar)
@@ -57,12 +62,12 @@ def gen_def_src(key, grammar, cheap=False):
 	rule_count = len(grammar[key])
 
 	if cheap:
-		out = f"def gen_{key[1:-1]}_cheap():\n" 				\
+		out = f"def gen_{sanitize(key)}_cheap():\n" 				\
 			  f"\tval = random.randrange({rule_count})\n"
 	else:
-		out = f"def gen_{key[1:-1]}(max_depth, depth=0):\n"		\
+		out = f"def gen_{sanitize(key)}(max_depth, depth=0):\n"		\
 			  f"\tif depth > max_depth:\n"						\
-			  f"\t\tgen_{key[1:-1]}_cheap()\n"					\
+			  f"\t\tgen_{sanitize(key)}_cheap()\n"					\
 			  f"\t\treturn\n"									\
 			  f"\tval = random.randrange({rule_count})\n"
 		
@@ -73,8 +78,8 @@ def gen_def_src(key, grammar, cheap=False):
 			if isinstance(token, int):
 				out += f"\t\tresult.append({token})\n"
 			else:
-				if cheap: out += f"\t\tgen_{token[1:-1]}_cheap()\n"
-				else: out += f"\t\tgen_{token[1:-1]}(max_depth, depth + 1)\n"
+				if cheap: out += f"\t\tgen_{sanitize(token)}_cheap()\n"
+				else: out += f"\t\tgen_{sanitize(token)}(max_depth, depth + 1)\n"
 
 		out += f"\t\treturn\n"
 
