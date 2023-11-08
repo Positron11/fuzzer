@@ -62,8 +62,8 @@ def cheapen(grammar):
 
 # generate compiled fuzzer core by cost
 def gen_def_src(key, grammar, cheap=False):
-	grammar = byteify(grammar)
 	if cheap: grammar = cheapen(grammar)
+	grammar = byteify(grammar)
 	rule_count = len(grammar[key])
 
 	if cheap:
