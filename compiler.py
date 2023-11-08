@@ -35,7 +35,7 @@ def byteify(grammar):
 	new_grammar = dict()
 	
 	for definition in grammar:
-		new_grammar[definition] = [[token if token[0] == "<" and token[-1] == ">" else ord(token) for token in rule] for rule in grammar[definition]]
+		new_grammar[definition] = [[token if nonterminal(token) else ord(token) for token in rule] for rule in grammar[definition]]
 
 	return new_grammar
 
