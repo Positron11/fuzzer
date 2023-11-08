@@ -61,43 +61,66 @@ def gen_def_src(key, grammar, cheap=False):
 	grammar = byteify(grammar)
 	rule_count = len(grammar[key])
 
+	
 	if cheap:
-		out = f"def gen_{sanitize(key)}_cheap():\n" 				\
-			  f"\tval = random.randrange({rule_count})\n"
+		out = f"void gen_{sanitize(key)}_cheap() {{\n"
 	else:
-		out = f"def gen_{sanitize(key)}(max_depth, depth=0):\n"		\
-			  f"\tif depth > max_depth:\n"						\
-			  f"\t\tgen_{sanitize(key)}_cheap()\n"					\
-			  f"\t\treturn\n"									\
-			  f"\tval = random.randrange({rule_count})\n"
+		out = f"void gen_{sanitize(key)}(int max_depth, int depth) {{\n"		\
+			   "\tif (depth > max_depth) {\n"												\
+			  f"\t\tgen_{sanitize(key)}_cheap();\n"									\
+			   "\t\treturn;\n"																\
+			   "\t}\n\n"
+			  
+	out += f"\tint val = rand() % {rule_count};\n"
 		
 	for i in range(rule_count):
-		out += f"\tif val == {i}:\n"
+		out += f"\n\tif (val == {i}) {{\n"
 		
 		for token in grammar[key][i]:
 			if isinstance(token, int):
-				out += f"\t\tresult.append({token})\n"
+				out += f"\t\tputchar({token});\n"
 			else:
-				if cheap: out += f"\t\tgen_{sanitize(token)}_cheap()\n"
-				else: out += f"\t\tgen_{sanitize(token)}(max_depth, depth + 1)\n"
+				if cheap: out += f"\t\tgen_{sanitize(token)}_cheap();\n"
+				else: out += f"\t\tgen_{sanitize(token)}(max_depth, depth + 1);\n"
 
-		out += f"\t\treturn\n"
+		out += "\t\treturn;\n"	\
+			   "\t}\n"
 
+	return out + "}\n"
+
+
+# generate static source
+def gen_static_init():
+	return "#include <stdio.h>\n"		\
+		   "#include <stdlib.h>\n"		\
+		   "#include <time.h>\n"
+		   
+
+# generate static source
+def gen_def_init(grammar):
+	out = str()
+
+	for token in grammar:
+		out += f"void gen_{sanitize(token)}_cheap();\n"						\
+			   f"void gen_{sanitize(token)}(int max_depth, int depth);\n"	\
+			   
 	return out
 
 
 # generate static source
-def gen_static_src():
-	return "import random\n\n"								\
-		   "result = []\n\n"								\
-		   "def fuzz(max_depth):\n"							\
-		   "\tgen_start(max_depth)\n"						\
-		   "\treturn ''.join([chr(i) for i in result])\n"	\
+def gen_driver_src():
+	return "int main(int argc, char const *argv[]) {\n"		\
+		   "\tsrand((unsigned) time(0));\n"					\
+		   "\tgen_start(10, 0);\n"							\
+		   "\treturn 0;\n"									\
+		   "}\n"
 
 
 # aggregate compiled fuzzer source
 def gen_fuzz_src(grammar):
-	out = f"{gen_static_src()}\n"
+	out = f"{gen_static_init()}\n"
+	out += f"{gen_def_init(grammar)}\n"
+	out += f"{gen_driver_src()}\n"
 
 	for definition in grammar:
 		out += f"{gen_def_src(definition, grammar, cheap=True)}\n"	\
