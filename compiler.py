@@ -66,9 +66,9 @@ def gen_def_src(key, grammar, cheap=False):
 		out = f"void gen_{sanitize(key)}_cheap() {{\n"
 	else:
 		out = f"void gen_{sanitize(key)}(int max_depth, int depth) {{\n"		\
-			   "\tif (depth > max_depth) {\n"												\
-			  f"\t\tgen_{sanitize(key)}_cheap();\n"									\
-			   "\t\treturn;\n"																\
+			   "\tif (depth > max_depth) {\n"									\
+			  f"\t\tgen_{sanitize(key)}_cheap();\n"								\
+			   "\t\treturn;\n"													\
 			   "\t}\n\n"
 			  
 	out += f"\tint val = rand() % {rule_count};\n"
@@ -83,7 +83,7 @@ def gen_def_src(key, grammar, cheap=False):
 				if cheap: out += f"\t\tgen_{sanitize(token)}_cheap();\n"
 				else: out += f"\t\tgen_{sanitize(token)}(max_depth, depth + 1);\n"
 
-		out += "\t\treturn;\n"	\
+		out += "\t\treturn;\n"		\
 			   "\t}\n"
 
 	return out + "}\n"
@@ -101,18 +101,19 @@ def gen_def_init(grammar):
 	out = str()
 
 	for token in grammar:
-		out += f"void gen_{sanitize(token)}_cheap();\n"						\
-			   f"void gen_{sanitize(token)}(int max_depth, int depth);\n"	\
+		out += f"void gen_{sanitize(token)}_cheap();\n"							\
+			   f"void gen_{sanitize(token)}(int max_depth, int depth);\n"		\
 			   
 	return out
 
 
 # generate static source
 def gen_driver_src():
-	return "int main(int argc, char const *argv[]) {\n"		\
-		   "\tsrand((unsigned) time(0));\n"					\
-		   "\tgen_start(10, 0);\n"							\
-		   "\treturn 0;\n"									\
+	return "int main(int argc, char const *argv[]) {\n"					\
+		   "\tsrand((unsigned) time(0));\n"								\
+		   "\tint max_depth = argc > 1 ? strtod(argv[1], 0): 10;\n"		\
+		   "\tgen_start(max_depth, 0);\n"								\
+		   "\treturn 0;\n"												\
 		   "}\n"
 
 
@@ -123,7 +124,7 @@ def gen_fuzz_src(grammar):
 	out += f"{gen_driver_src()}\n"
 
 	for definition in grammar:
-		out += f"{gen_def_src(definition, grammar, cheap=True)}\n"	\
+		out += f"{gen_def_src(definition, grammar, cheap=True)}\n"		\
 			   f"{gen_def_src(definition, grammar)}\n"
 
 	return out
