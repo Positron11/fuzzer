@@ -55,6 +55,19 @@ def sanitize(token):
 	return token[1:-1].replace('-', '_')
 
 
+# generate header source
+def gen_header_src(grammar):
+	out = "#ifndef CSLIB_H_INCLUDED\n"		\
+		  "#define CSLIB_H_INCLUDED\n\n"	\
+		  "void fuzz(int max_depth);"
+
+	for token in grammar:
+		out += f"void gen_{sanitize(token)}_cheap();\n"							\
+			   f"void gen_{sanitize(token)}(int max_depth, int depth);\n"		\
+			   
+	return out + "\n#endif\n"
+
+
 # generate compiled fuzzer core source by cost
 def gen_def_src(key, grammar, cheap=False):
 	if cheap: grammar = cheapen(grammar)
@@ -89,39 +102,17 @@ def gen_def_src(key, grammar, cheap=False):
 	return out + "}\n"
 
 
-# generate static source
-def gen_static_init():
-	return "#include <stdio.h>\n"		\
-		   "#include <stdlib.h>\n"		\
-		   "#include <time.h>\n"
-		   
-
-# generate static source
-def gen_def_init(grammar):
-	out = str()
-
-	for token in grammar:
-		out += f"void gen_{sanitize(token)}_cheap();\n"							\
-			   f"void gen_{sanitize(token)}(int max_depth, int depth);\n"		\
-			   
-	return out
-
-
-# generate static source
-def gen_driver_src():
-	return "int main(int argc, char const *argv[]) {\n"					\
-		   "\tsrand((unsigned) time(0));\n"								\
-		   "\tint max_depth = argc > 1 ? strtod(argv[1], 0): 10;\n"		\
-		   "\tgen_start(max_depth, 0);\n"								\
-		   "\treturn 0;\n"												\
-		   "}\n"
-
-
 # aggregate compiled fuzzer source
-def gen_fuzz_src(grammar):
-	out = f"{gen_static_init()}\n"
-	out += f"{gen_def_init(grammar)}\n"
-	out += f"{gen_driver_src()}\n"
+def gen_main_src(grammar, header):
+	out =  "#include <stdio.h>\n"			\
+		   "#include <stdlib.h>\n"			\
+		   "#include <time.h>\n"			\
+		  f"#include \"{header}.h\"\n"
+	
+	out += "void fuzz(int max_depth) {\n"		\
+		   "\tsrand((unsigned) time(0));\n"		\
+		   "\tgen_start(max_depth, 0);\n"		\
+		   "}\n"
 
 	for definition in grammar:
 		out += f"{gen_def_src(definition, grammar, cheap=True)}\n"		\
