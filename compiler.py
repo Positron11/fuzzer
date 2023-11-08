@@ -1,13 +1,3 @@
-import json
-
-
-def print_grammar(grammar):
-	for definition in grammar:
-		print(definition)
-		for rule in grammar[definition]:
-			print(f"\t{rule}")
-
-
 def nonterminal(token):
 	return token[0] == "<" and token[-1] == ">"
 
@@ -60,7 +50,7 @@ def cheapen(grammar):
 	return new_grammar
 
 
-# generate compiled fuzzer core by cost
+# generate compiled fuzzer core source by cost
 def gen_def_src(key, grammar, cheap=False):
 	if cheap: grammar = cheapen(grammar)
 	grammar = byteify(grammar)
@@ -91,20 +81,21 @@ def gen_def_src(key, grammar, cheap=False):
 	return out
 
 
-# aggregate compiled fuzzer cores
+# generate static source
+def gen_static_src():
+	return "import random\n\n"								\
+		   "result = []\n\n"								\
+		   "def fuzz(max_depth):\n"							\
+		   "\tgen_start(max_depth)\n"						\
+		   "\treturn ''.join([chr(i) for i in result])\n"	\
+
+
+# aggregate compiled fuzzer source
 def gen_fuzz_src(grammar):
-	out = str()
+	out = f"{gen_static_src()}\n"
 
 	for definition in grammar:
 		out += f"{gen_def_src(definition, grammar, cheap=True)}\n"	\
-			   f"{gen_def_src(definition, grammar)}\n\n"
+			   f"{gen_def_src(definition, grammar)}\n"
 
 	return out
-
-
-with open("grammar.json", "r") as f:
-	grammar = json.load(f)
-
-print_grammar(cheapen(grammar))
-
-
