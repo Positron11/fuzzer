@@ -5,7 +5,6 @@
 	"<expr>": [
 		["<term>", "+", "<expr>"],
 		["<term>", "-", "<expr>"],
-		["<integer>", "<factor>"],
 		["<term>"]
 	],
 	"<term>": [
