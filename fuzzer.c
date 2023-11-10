@@ -79,11 +79,9 @@ int main(int argc, char *argv[]) {
 // main fuzzing function
 void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth) {
 	char* stack = malloc(2097152 * sizeof(char));
-	char* output = malloc(2097152 * sizeof(char));
 
 	// set chaser pointers for efficient concatenation
 	char* stack_ptr = stack;
-	char* out_ptr = output;
 
 	OVERRWRITE(stack, stack_ptr, START_TOKEN, START_TOKEN_LEN); // initialize stack with start token
 
@@ -107,7 +105,7 @@ void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth) {
 
 		// if segment comprised of terminals append terminals to output
 		if (is_terminal) {
-			out_ptr = append(out_ptr, segment, segment_len);
+			printf(segment);
 			continue;
 		}
 
@@ -137,8 +135,6 @@ void fuzzer(Definition* grammar, depth_t min_depth, depth_t max_depth) {
 
 		stack_ptr = prepend(stack, stack_ptr, rule, STACK_LEN, strlen(rule)); // prepend rule to stack
 	}
-
-	printf("%s\n", output);
 }
 
 // get rule from definition
