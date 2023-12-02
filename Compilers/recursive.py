@@ -27,6 +27,7 @@ def gen_main_src(grammar, header):
 		"rand": byteify(grammar)
 	}
 
+	# write tatic source and main fuzzing function
 	out = "#include <stdio.h>\n"								\
 		   "#include <stdlib.h>\n"								\
 		   "#include <time.h>\n"								\

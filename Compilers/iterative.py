@@ -33,6 +33,7 @@ def gen_main_src(grammar, header):
 		"rand": byteify(grammar)
 	}
 
+	# write tatic source and main fuzzing function
 	out = "#include <stdio.h>\n"																				\
 		   "#include <stdlib.h>\n"																				\
 		   "#include <string.h>\n"																				\
@@ -101,6 +102,7 @@ def gen_main_src(grammar, header):
 
 			out += "}\n\n"
 
+	# manually create write function
 	return out + "void write(int token) {\n"										\
 				 "\tmemmove(&stack[0], &stack[1], stack_len * sizeof(lambda));\n"	\
 				 "\tputchar(token);\n"												\
