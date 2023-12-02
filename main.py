@@ -1,14 +1,14 @@
 import os
 import json
 import subprocess
-from compiler import gen_header_src, gen_main_src
+from Compilers.iterative import gen_header_src, gen_main_src
 
 os.makedirs("./build", exist_ok=True) 
 
 filename = "fuzzing"
 depth = 100
 
-with open("grammar.json", "r") as f:
+with open("Grammars/arithmetic.json", "r") as f:
 	grammar = json.load(f)
 
 with open(f"build/{filename}.h", "w") as f:
