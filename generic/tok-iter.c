@@ -42,7 +42,13 @@ token_t* append(token_t* target_ptr, token_t source[], size_t len);
 token_t* prepend(token_t target[], token_t* target_ptr, token_t source[], size_t target_len, size_t source_len);
 
 int main(int argc, char *argv[]) {
-	srand((unsigned) time(0)); // initialize random
+	if (argc <= 1) {
+		puts("Error: seed argument required");
+		return EXIT_FAILURE;
+	}
+	
+	int seed = strtod(argv[1], 0);
+	srand((unsigned) seed); // initialize random
 
 	Grammar grammar = { .def_count=5, .definitions=(Definition []) {
 		(Definition) {.rule_count={1, 0}, .rules={ // start
@@ -104,8 +110,8 @@ int main(int argc, char *argv[]) {
 	} };
 
 	// set options from command line if possible otherwise set to defaults
-	depth_t min_depth = argc > 1 ? strtod(argv[1], 0) : 2;
-	depth_t max_depth = argc > 1 ? (argc > 2 ? strtod(argv[2], 0) : min_depth) : 4;
+	int min_depth = argc > 2 ? strtod(argv[2], 0) : 0;
+	int max_depth = argc > 2 ? strtod(argv[argc - 1], 0) : 10;
 	
 	fuzzer(&grammar, min_depth, max_depth);
 
