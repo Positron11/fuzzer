@@ -106,9 +106,8 @@ int main(int argc, char *argv[]) {
 	// set options from command line if possible otherwise set to defaults
 	depth_t min_depth = argc > 1 ? strtod(argv[1], 0) : 2;
 	depth_t max_depth = argc > 1 ? (argc > 2 ? strtod(argv[2], 0) : min_depth) : 4;
-	depth_t runs = argc > 3 ? strtod(argv[3], 0) : 1;
 	
-	for (size_t i = 0; i < runs; i++) fuzzer(&grammar, min_depth, max_depth);
+	fuzzer(&grammar, min_depth, max_depth);
 
 	return EXIT_SUCCESS;
 }
