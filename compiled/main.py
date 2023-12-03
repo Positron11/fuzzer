@@ -22,14 +22,23 @@ with open("build/core.c", "w") as f:
 
 # generate driver
 with open("build/driver.c", "w") as f:	
-	print("#include <stdlib.h>\n"												\
-		  "#include \"core.h\"\n\n"												\
-		  "int main(int argc, char const *argv[]) {\n"							\
-		  "\tint min_depth = argc > 1 ? strtod(argv[1], 0) : 0;\n"				\
-		  "\tint max_depth = argc > 1 ? strtod(argv[argc - 1], 0) : 10;\n"		\
-		  "\tfuzz(min_depth, max_depth);\n"										\
-		  "\treturn 0;\n"														\
-		  "}\n", file=f)
+	print("""#include <stdio.h>
+#include <stdlib.h>
+#include "core.h"
+
+int main(int argc, char const *argv[]) {
+	if (argc <= 1) {
+		puts("Error: seed argument required");
+		return EXIT_FAILURE;
+	}
+
+	int seed = strtod(argv[1], 0);
+	int min_depth = argc > 2 ? strtod(argv[2], 0) : 0;
+	int max_depth = argc > 2 ? strtod(argv[argc - 1], 0) : 10;
+	fuzz(seed, min_depth, max_depth);
+
+	return 0;
+}""", file=f)
 
 # compile executable
 subprocess.run(f"gcc -o build/fuzz build/driver.c build/core.c", shell=True)							

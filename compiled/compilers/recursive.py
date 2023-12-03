@@ -4,7 +4,7 @@ from utilities.gramutils import cheapen, upscale, byteify, sanitize
 def gen_header_src(grammar):
 	out = "#ifndef CSLIB_H_INCLUDED\n"					\
 		  "#define CSLIB_H_INCLUDED\n\n"				\
-		  "void fuzz(int min_depth, int max_depth);\n\n"
+		  "void fuzz(int seed, int min_depth, int max_depth);\n\n"
 	
 	expensive_grammar = upscale(grammar)
 
@@ -28,13 +28,13 @@ def gen_main_src(grammar, header):
 	}
 
 	# write tatic source and main fuzzing function
-	out = "#include <stdio.h>\n"								\
-		   "#include <stdlib.h>\n"								\
-		   "#include <time.h>\n"								\
-		  f"#include \"{header}.h\"\n\n"						\
-		   "void fuzz(int min_depth, int max_depth) {\n"		\
-		   "\tsrand((unsigned) time(0));\n"						\
-		   "\tgen_start_rand(min_depth, max_depth, 0);\n"		\
+	out = "#include <stdio.h>\n"										\
+		   "#include <stdlib.h>\n"										\
+		   "#include <time.h>\n"										\
+		  f"#include \"{header}.h\"\n\n"								\
+		   "void fuzz(int seed, int min_depth, int max_depth) {\n"		\
+		   "\tsrand((unsigned) seed);\n"								\
+		   "\tgen_start_rand(min_depth, max_depth, 0);\n"				\
 		   "}\n\n"
 
 	for key in grammar:

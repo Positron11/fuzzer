@@ -9,7 +9,7 @@ def gen_header_src(grammar):
 		  "\tint args[3];\n"								\
 		  "\tfunc func;\n"									\
 		  "} lambda;\n\n"									\
-		  "void fuzz(int min_depth, int max_depth);\n\n"
+		  "void fuzz(int seed, int min_depth, int max_depth);\n\n"
 	
 	expensive_grammar = upscale(grammar)
 
@@ -41,8 +41,8 @@ def gen_main_src(grammar, header):
 		  f"#include \"{header}.h\"\n\n"																		\
 		   "lambda stack[1024];\n"																				\
 		   "int stack_len = 1;\n\n"																				\
-		   "void fuzz(int min_depth, int max_depth) {\n"														\
-		   "\tsrand((unsigned) time(0));\n\n"																	\
+		   "void fuzz(int seed, int min_depth, int max_depth) {\n"												\
+		   "\tsrand((unsigned) seed);\n\n"																		\
 		   "\tstack[0] = (lambda) {.args={min_depth, max_depth, 0}, .func=&gen_start_rand};\n"					\
 		   "\twhile (stack_len > 0) stack[0].func(stack[0].args[0], stack[0].args[1], stack[0].args[2]);\n\n"	\
 		   "\treturn;\n"																						\
