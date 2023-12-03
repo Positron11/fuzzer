@@ -8,9 +8,9 @@ A collection of simple depth-limited grammar fuzzers implemented in C.
 
 View the source for generic fuzzers in `generic/`. Directory contains two classes (**str**ing and **tok**en) and two subtypes (**iter**ative and **rec**u**r**sive). Compile to obtain fuzzer executables - the command line options passable to the executables are as follows:
 
-1. `fuzzer <min and max depth>`
-2. `fuzzer <min depth> <max depth>`
-3. `fuzzer <min depth> <max depth> <runs>` 
+1. `fuzzer <seed> <min and max depth>`
+2. `fuzzer <seed> <min depth> <max depth>`
+3. `fuzzer <seed> <min depth> <max depth> <runs>` 
 
 **TODO:** create python script to compile JSON grammar into C grammar struct for use with generic fuzzers.
 
@@ -20,8 +20,8 @@ View the source for generic fuzzers in `generic/`. Directory contains two classe
 
 View the source for compilers in `compiled/compilers`/ and generate C source and executables with `compiled/main.py` (due to the nature of python imports, it is imperative that `compiled/main.py` be run from within `compiled/`). The command line options passable to the executables are as follows:
 
-1. `fuzzer <min and max depth>`
-2. `fuzzer <min depth> <max depth>`
+1. `fuzzer <seed> <min and max depth>`
+2. `fuzzer <seed> <min depth> <max depth>`
 
 ## Credits
 
