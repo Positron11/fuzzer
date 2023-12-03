@@ -19,7 +19,6 @@ typedef struct Rule {
 } Rule;
 
 typedef struct Definition {
-	char* name;
 	size_t rule_count[2];
 	Rule* rules[2]; // [0]: cheap, [1]: costly
 } Definition;
@@ -38,23 +37,23 @@ int main(int argc, char *argv[]) {
 	srand((unsigned) time(0)); // initialize random
 
 	Grammar grammar = { .def_count=5, .definitions=(Definition []) {
-		(Definition) { .name="start", .rule_count={1, 0}, .rules={
+		(Definition) {.rule_count={1, 0}, .rules={
 			(Rule []) {
 				(Rule) { .token_count=1, .tokens=(token_t[]) {phone} }
 			}
 		} },
-		(Definition) { .name="phone", .rule_count={2, 0}, .rules={
+		(Definition) {.rule_count={2, 0}, .rules={
 			(Rule []) {
 				(Rule) { .token_count=3, .tokens=(token_t[]){number, '-', number} },
 				(Rule) { .token_count=4, .tokens=(token_t[]){area, number, '-', number} }
 			}
 		} },
-		(Definition) { .name="area", .rule_count={1, 0}, .rules={
+		(Definition) {.rule_count={1, 0}, .rules={
 			(Rule []) {
 				(Rule) { .token_count=5, .tokens=(token_t[]){'(', '+', digit, digit, ')'} }
 			}
 		} },
-		(Definition) { .name="number", .rule_count={1, 1}, .rules={
+		(Definition) {.rule_count={1, 1}, .rules={
 			(Rule []) {
 				(Rule) { .token_count=1, .tokens=(token_t[]){digit} },
 			},
@@ -62,7 +61,7 @@ int main(int argc, char *argv[]) {
 				(Rule) { .token_count=2, .tokens=(token_t[]){number, digit} }
 			}
 		} },
-		(Definition) { .name="digit", .rule_count={10, 0}, .rules={
+		(Definition) {.rule_count={10, 0}, .rules={
 			(Rule []) {
 				(Rule) { .token_count=1, .tokens=(token_t[]){'0'} },
 				(Rule) { .token_count=1, .tokens=(token_t[]){'1'} },
