@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "uthash.h"
+#include "lib/uthash.h"
 
 #define START_TOKEN "<start>"
 #define START_TOKEN_LEN 7
