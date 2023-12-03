@@ -34,7 +34,7 @@ typedef struct Grammar {
 } Grammar;
 
 enum depth_lock_states {unlocked, locking, locked};
-enum nonterminals {start = SCHAR_MIN, phone, area, number, digit, depthlock};
+enum nonterminals {start = SCHAR_MIN, expr, term, factor, integer, digit, depthlock};
 
 void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth);
 Rule* get_rule(Definition* definition, int cost);
@@ -45,31 +45,49 @@ int main(int argc, char *argv[]) {
 	srand((unsigned) time(0)); // initialize random
 
 	Grammar grammar = { .def_count=5, .definitions=(Definition []) {
-		[start - start] = (Definition) {.rule_count={1, 0}, .rules={
+		(Definition) {.rule_count={1, 0}, .rules={ // start
 			(Rule []) {
-				(Rule) { .token_count=1, .tokens=(token_t[]) {phone} }
+				(Rule) { .token_count=1, .tokens=(token_t[]) {expr} }
 			}
 		} },
-		[phone - start] = (Definition) {.rule_count={2, 0}, .rules={
+		(Definition) {.rule_count={1, 2}, .rules={ // expr
 			(Rule []) {
-				(Rule) { .token_count=3, .tokens=(token_t[]){number, '-', number} },
-				(Rule) { .token_count=4, .tokens=(token_t[]){area, number, '-', number} }
+				(Rule) { .token_count=1, .tokens=(token_t[]){term} }
+			},
+			(Rule []) {
+				(Rule) { .token_count=3, .tokens=(token_t[]){term, '+', expr} },
+				(Rule) { .token_count=3, .tokens=(token_t[]){term, '-', expr} }
 			}
 		} },
-		[area - start] = (Definition) {.rule_count={1, 0}, .rules={
+		(Definition) {.rule_count={1, 2}, .rules={ // term
 			(Rule []) {
-				(Rule) { .token_count=5, .tokens=(token_t[]){'(', '+', digit, digit, ')'} }
+				(Rule) { .token_count=1, .tokens=(token_t[]){factor} }
+			},
+			(Rule []) {
+				(Rule) { .token_count=3, .tokens=(token_t[]){factor, '*', term} },
+				(Rule) { .token_count=3, .tokens=(token_t[]){factor, '/', term} }
 			}
 		} },
-		[number - start] = (Definition) {.rule_count={1, 1}, .rules={
+		(Definition) {.rule_count={2, 3}, .rules={ // factor
+			(Rule []) {
+				(Rule) { .token_count=1, .tokens=(token_t[]){integer} },
+				(Rule) { .token_count=3, .tokens=(token_t[]){integer, '.', integer} },
+			},
+			(Rule []) {
+				(Rule) { .token_count=2, .tokens=(token_t[]){'+', factor} },
+				(Rule) { .token_count=2, .tokens=(token_t[]){'-', factor} },
+				(Rule) { .token_count=3, .tokens=(token_t[]){'(', expr, ')'} }
+			}
+		} },
+		(Definition) {.rule_count={1, 1}, .rules={ // integer
 			(Rule []) {
 				(Rule) { .token_count=1, .tokens=(token_t[]){digit} },
 			},
 			(Rule []) {
-				(Rule) { .token_count=2, .tokens=(token_t[]){digit, number} }
+				(Rule) { .token_count=2, .tokens=(token_t[]){digit, integer} }
 			}
 		} },
-		[digit - start] = (Definition) {.rule_count={10, 0}, .rules={
+		(Definition) {.rule_count={10, 0}, .rules={ // digit
 			(Rule []) {
 				(Rule) { .token_count=1, .tokens=(token_t[]){'0'} },
 				(Rule) { .token_count=1, .tokens=(token_t[]){'1'} },
