@@ -34,7 +34,7 @@ typedef struct Grammar {
 } Grammar;
 
 enum depth_lock_states {unlocked, locking, locked};
-enum nonterminals {start = SCHAR_MIN, expr, term, factor, integer, digit, depthlock};
+enum nonterminals {start = SCHAR_MIN, expr, term, factor, integer, digit};
 
 void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth);
 Rule* get_rule(Definition* definition, int cost);
