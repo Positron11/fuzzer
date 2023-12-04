@@ -121,11 +121,9 @@ int main(int argc, char *argv[]) {
 // main fuzzer function
 void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth) {
 	token_t* stack = malloc(2097152 * sizeof(token_t));
-	token_t* output = malloc(2097152 * sizeof(token_t));
 
 	// declare chaser pointers for efficient stack modifications
 	token_t* stack_ptr = stack;
-	token_t* out_ptr = output;
 
 	*(stack_ptr++) = start; // initialize stack with start token
 
@@ -149,7 +147,7 @@ void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth) {
 
 		// if token is terminal append token to output
 		if (token >= 0) {
-			*(out_ptr++) = token;
+			putchar(token);
 			if (current_depth > 0 && current_depth >= max_depth) stepwise_token_count[current_depth - 1]--; // if haven't already, decrement latest stepwise token count
 			while (stepwise_token_count[current_depth - 1] == 0) current_depth--; // roll back to nearest incomplete node
 			continue;
@@ -167,8 +165,6 @@ void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth) {
 
 		stack_ptr = prepend(stack, stack_ptr, rule->tokens, STACK_LEN, rule->token_count); // prepend rule to stack 
 	}
-
-	for (size_t i = 0; i < out_ptr - output; i++) putchar(output[i]);
 }
 
 // get rule from definition
