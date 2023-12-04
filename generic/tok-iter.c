@@ -29,7 +29,6 @@ typedef struct Definition {
 } Definition;
 
 typedef struct Grammar {
-	size_t def_count;
 	Definition* definitions;
 } Grammar;
 
@@ -50,7 +49,7 @@ int main(int argc, char *argv[]) {
 	int seed = strtod(argv[1], 0);
 	srand((unsigned) seed); // initialize random
 
-	Grammar grammar = { .def_count=5, .definitions=(Definition []) {
+	Grammar grammar = {.definitions=(Definition []) {
 		(Definition) {.rule_count={1, 0}, .rules={ // start
 			(Rule []) {
 				(Rule) { .token_count=1, .tokens=(token_t[]) {expr} }
