@@ -23,7 +23,18 @@ View the source for generic fuzzers in `generic/`. Directory contains two classe
 2. `fuzzer <seed> <min depth> <max depth>`
 3. `fuzzer <seed> <min depth> <max depth> <runs>` 
 
-**TODO:** create python script to compile JSON grammar into C grammar struct for use with generic fuzzers.
+### Grammar Compilation
+
+For both token fuzzers, a grammar compilation utility is included in `generic/utilities/gcompiler.py`, which takes a JSON grammar as input and prints a compiled header file to `stdout`. Use like so:
+
+```bash
+cd generic/utilities/
+python gcompiler.py path-to-json-grammar > path-to-header-file
+```
+
+To use this grammar, change the import statement near the beginning of the fuzzer source file (default: `\#include "grammars/arithmetic.h"`). A precompiled grammar has been included in `generic/utilities/grammars/`.
+
+(It might've been more elegant to include the grammar with the `-include` flag but removing the import statement floods my IDE with red lines.)
 
 ### Compiled Fuzzers
 
