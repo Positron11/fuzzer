@@ -55,7 +55,7 @@ def gen_main_src(grammar, header):
 				# use expensive function (if exists) if below min depth
 				if key in grammars["expensive"]:
 					out +=  " else if (depth < min_depth) {\n"										\
-						   f"\t\tgen_{sanitize(key)}_expensive(min_depth, max_depth, depth + 1);\n"		\
+						   f"\t\tgen_{sanitize(key)}_expensive(min_depth, max_depth, depth);\n"		\
 						    "\t\treturn;\n"															\
 						    "\t}"
 							
