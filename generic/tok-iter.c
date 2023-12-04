@@ -131,12 +131,18 @@ void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth) {
 
 	// recursion limit variables
 	int recursion_lock_state = 0;
-	depth_t current_depth = 0;
 	int rule_cost = 0;
+
+	// depth state variables
+	depth_t stepwise_token_count[1024] = {};
+	depth_t current_depth = 0;
+
+	int counter = 0;
 
 	// while stack not empty...
 	while (STACK_LEN > 0) {
 		token_t token = stack[0]; // get first token
+		if (current_depth < max_depth) stepwise_token_count[current_depth - 1]--; // if not in cheap mode, decrement latest stepwise token count
 		
 		int buffer_len = STACK_LEN - 1; // get buffer length
 		OVERWRITE(stack, stack_ptr, &stack[1], buffer_len); // overrwrite stack with buffer
@@ -144,34 +150,22 @@ void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth) {
 		// if token is terminal append token to output
 		if (token >= 0) {
 			*(out_ptr++) = token;
+			if (current_depth >= max_depth) stepwise_token_count[current_depth - 1]--; // if haven't already, decrement latest stepwise token count
+			while (stepwise_token_count[current_depth - 1] == 0) current_depth--; // roll back to nearest incomplete node
 			continue;
 		}
 		
-		// if segment is depthlock token reset recursion lock vars
-		if (token == depthlock) {
-			recursion_lock_state = unlocked;
-			current_depth = 0;
-			continue;	
-		} 
-		
 		Definition* definition = &grammar->definitions[token - start];
-		
+
 		rule_cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST); // calculate cost based on depth...
 		rule_cost = definition->rule_count[1] ? rule_cost : LOW_COST; // ...and force low if definition not recursive
-		
-		if (rule_cost == HIGH_COST) {
-			if (recursion_lock_state == unlocked) recursion_lock_state = locking;
-			current_depth++;
-		}
 
 		Rule* rule = get_rule(definition, rule_cost);
 
-		if (recursion_lock_state == locking) {
-			stack_ptr = prepend(stack, stack_ptr, (token_t []) {depthlock}, STACK_LEN, 1); // prepend depthlock token to stack
-			recursion_lock_state = locked;
-		}
+		if (current_depth < max_depth) stepwise_token_count[current_depth++] = rule->token_count; // if not in cheap mode, append token count to stepwise array
+		else stepwise_token_count[current_depth - 1] += (rule->token_count) - 1; // otherwise if in cheap mode, add to current token count
 
-		stack_ptr = prepend(stack, stack_ptr, rule->tokens, STACK_LEN, rule->token_count); // prepend rule to stack
+		stack_ptr = prepend(stack, stack_ptr, rule->tokens, STACK_LEN, rule->token_count); // prepend rule to stack 
 	}
 
 	for (size_t i = 0; i < out_ptr - output; i++) putchar(output[i]);
