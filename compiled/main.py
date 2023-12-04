@@ -1,3 +1,6 @@
+import sys
+sys.path.append("..")
+
 import os
 import json
 import subprocess
@@ -7,7 +10,7 @@ from compilers.iterative import gen_header_src, gen_main_src
 os.makedirs("./build", exist_ok=True) 
 
 # load grammar
-with open("grammars/arithmetic.json", "r") as f:
+with open("../grammars/arithmetic.json", "r") as f:
 	grammar = json.load(f)
 
 # generate header
