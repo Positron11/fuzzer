@@ -132,7 +132,7 @@ void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth) {
 	int rule_cost = 0;
 
 	// depth state variables
-	depth_t stepwise_token_count[1024] = {};
+	depth_t stepwise_token_count[128] = {};
 	depth_t current_depth = 0;
 
 	int counter = 0;
