@@ -68,8 +68,8 @@ int main(int argc, char *argv[]) {
 		} },
 		(Definition) {.rule_count={2, 3}, .rules={ // factor
 			(Rule []) {
-				(Rule) { .token_count=1, .tokens=(token_t[]){integer} },
 				(Rule) { .token_count=3, .tokens=(token_t[]){integer, '.', integer} },
+				(Rule) { .token_count=1, .tokens=(token_t[]){integer} }
 			},
 			(Rule []) {
 				(Rule) { .token_count=2, .tokens=(token_t[]){'+', factor} },
