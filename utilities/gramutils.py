@@ -14,13 +14,12 @@ def reprehensible(rule, key, grammar, visited=None):
 	# if rule consists entirely of terminals (ie. the path has terminated) mark as non-reprehensible
 	if not nonterms: return False
 
-	# visited[0] in rule -> rule loops back to origin
-	# visited[-1] in rule -> rule is recursive with respect to itself
-	if visited[0] in rule or visited[-1] in rule: return True
+	# if rule is recursive with respect to itself mark as reprehensible
+	if visited[-1] in rule: return True
 
 	for token in nonterms:
-		# if a loop occurs partway through the expansion path, set the origin to the beginning of this new loop
-		if token in visited: visited = visited[visited.index(token):-1]
+		# if a loop occurs partway through the expansion path mark as reprehensible
+		if token in visited: return True
 		else: visited.append(token)
 
 		for rule in grammar[token]:
