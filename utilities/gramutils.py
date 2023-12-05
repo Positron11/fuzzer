@@ -14,16 +14,13 @@ def reprehensible(rule, key, grammar, visited=None):
 	# if rule consists entirely of terminals (ie. the path has terminated) mark as non-reprehensible
 	if not nonterms: return False
 
-	# if rule is recursive with respect to itself mark as reprehensible
-	if visited[-1] in rule: return True
-
+	# if looping back onto expansion path, mark as reprehensible
+	if set(nonterms).intersection(set(visited)): return True
+		
+	# if any non-reprehensible continuation pathways found, mark as non-reprehensible
 	for token in nonterms:
-		# if a loop occurs partway through the expansion path mark as reprehensible
-		if token in visited: return True
-		else: visited.append(token)
-
 		for rule in grammar[token]:
-			if not reprehensible(rule, token, grammar, visited): return False
+			if not reprehensible(rule, token, grammar, visited + [token]): return False
 
 	# if there are no non-reprehensible paths found, mark the rule as reprehensible
 	return True	
