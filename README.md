@@ -38,7 +38,14 @@ To use this grammar, change the import statement near the beginning of the fuzze
 
 ### Compiled Fuzzers
 
-View the source for compilers in `compiled/compilers`/ and generate C source and executables with `compiled/main.py` (due to the nature of python imports, it is imperative that `compiled/main.py` be run from within `compiled/`). The command line options passable to the executables are as follows:
+View the source for compilers in `compiled/compilers`/ and generate C source and executables with `compiled/main.py` (due to the nature of python imports, it is imperative that `compiled/main.py` be run from within `compiled/`). Use as like so:
+
+```bash
+cd compiled/
+python main.py path-to-json-grammar
+```
+
+The command line options passable to the executables are as follows:
 
 1. `fuzzer <seed> <min and max depth>`
 2. `fuzzer <seed> <min depth> <max depth>`
