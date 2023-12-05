@@ -7,23 +7,23 @@ def nonterminals(rule):
 
 
 # identify vicious token rings
-def reprehensible(rule, key, grammar, visited=None):
+def ostracize(rule, key, grammar, visited=None, flagged=[]):
 	if visited is None: visited = [key]
 	nonterms = nonterminals(rule)
 
-	# if rule consists entirely of terminals (ie. the path has terminated) mark as non-reprehensible
-	if not nonterms: return False
-
-	# if looping back onto expansion path, mark as reprehensible
-	if set(nonterms).intersection(set(visited)): return True
+	# if looping back onto expansion path, flag rule
+	if set(nonterms).intersection(set(visited)):
+		flagged.append(f"{key, rule}")
+		return
 		
-	# if any non-reprehensible continuation pathways found, mark as non-reprehensible
+	# if rule not already flagged, evaluate continuation pathways
 	for token in nonterms:
 		for rule in grammar[token]:
-			if not reprehensible(rule, token, grammar, visited + [token]): return False
+			if f"{token, rule}" not in flagged:
+				ostracize(rule, token, grammar, visited + [token], flagged)
 
-	# if there are no non-reprehensible paths found, mark the rule as reprehensible
-	return True	
+	# return flagged endpoints
+	return set(flagged)
 
 
 # replace terminal tokens with ascii codes
@@ -38,20 +38,36 @@ def byteify(grammar):
 
 # filter out reprehensible rules
 def cheapen(grammar):
+	flagged = set()
+
+	# generate list of flagged rules
+	for key in grammar:
+		for rule in grammar[key]:
+			if f"{key, rule}" not in flagged: 
+				x = ostracize(rule, key, grammar)
+				if x: flagged.update(x)
+
 	new_grammar = dict();	
 	
 	for key in grammar:
-		new_grammar[key] = [rule for rule in grammar[key] if not reprehensible(rule, key, grammar)]
+		new_grammar[key] = [rule for rule in grammar[key] if f"{key, rule}" not in flagged]
 	
 	return new_grammar
 
 
 # filter out non-reprehensible rules
 def upscale(grammar):
+	flagged = set()
+
+	# generate list of flagged rules
+	for key in grammar:
+		for rule in grammar[key]:
+			if f"{key, rule}" not in flagged: flagged.update(ostracize(rule, key, grammar))
+
 	new_grammar = dict();	
 	
 	for key in grammar:
-		if filtered_rules := [rule for rule in grammar[key] if reprehensible(rule, key, grammar)]:
+		if filtered_rules := [rule for rule in grammar[key] if f"{key, rule}" in flagged]:
 			new_grammar[key] = filtered_rules
 	
 	return new_grammar
