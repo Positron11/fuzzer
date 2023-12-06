@@ -44,8 +44,7 @@ def cheapen(grammar):
 	for key in grammar:
 		for rule in grammar[key]:
 			if f"{key, rule}" not in flagged: 
-				x = ostracize(rule, key, grammar)
-				if x: flagged.update(x)
+				if x := ostracize(rule, key, grammar): flagged.update(x)
 
 	new_grammar = dict();	
 	
@@ -62,7 +61,8 @@ def upscale(grammar):
 	# generate list of flagged rules
 	for key in grammar:
 		for rule in grammar[key]:
-			if f"{key, rule}" not in flagged: flagged.update(ostracize(rule, key, grammar))
+			if f"{key, rule}" not in flagged: 
+				if x := ostracize(rule, key, grammar): flagged.update(x)
 
 	new_grammar = dict();	
 	
