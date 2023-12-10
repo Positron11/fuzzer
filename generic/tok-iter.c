@@ -44,21 +44,14 @@ int main(int argc, char *argv[]) {
 // main fuzzer function
 void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth) {
 	token_t* stack = malloc(2097152 * sizeof(token_t));
-
-	// declare chaser pointers for efficient stack modifications
-	token_t* stack_ptr = stack;
-
+	token_t* stack_ptr = stack; // declare chaser pointers for efficient stack modifications
 	*(stack_ptr++) = start; // initialize stack with start token
 
-	// recursion limit variables
-	int recursion_lock_state = 0;
 	int rule_cost = 0;
 
 	// depth state variables
 	depth_t stepwise_token_count[128] = {};
 	depth_t current_depth = 0;
-
-	int counter = 0;
 
 	// while stack not empty...
 	while (STACK_LEN > 0) {
