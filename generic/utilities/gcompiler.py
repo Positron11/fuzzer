@@ -40,7 +40,7 @@ out += f"enum nonterminals {{start = SCHAR_MIN, {", ".join([sanitize(token) for 
 out += f"Grammar grammar = {{.definitions=(Definition []) {{\n"
 
 for key in grammar:
-	out += f"\t(Definition) {{.rule_count={{{len(grammars['cheap'][key])}, {len(grammars['expensive'][key]) if key in grammars['expensive'] else '0'}}}, .rules={{\n"
+	out += f"\t[{sanitize(key)} - start] = (Definition) {{.rule_count={{{len(grammars['cheap'][key])}, {len(grammars['expensive'][key]) if key in grammars['expensive'] else '0'}}}, .rules={{\n"
 
 	for subgrammar in [grammars["cheap"], grammars["expensive"]]:
 		if key in subgrammar:

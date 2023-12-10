@@ -23,12 +23,12 @@ typedef struct Grammar {
 enum nonterminals {start = SCHAR_MIN, expr, term, factor, integer, digit};
 
 Grammar grammar = {.definitions=(Definition []) {
-	(Definition) {.rule_count={1, 0}, .rules={
+	[start - start] = (Definition) {.rule_count={1, 0}, .rules={
 		(Rule []) {
 			(Rule) { .token_count=1, .tokens=(token_t[]) {expr} },
 		},
 	} },
-	(Definition) {.rule_count={1, 2}, .rules={
+	[expr - start] = (Definition) {.rule_count={1, 2}, .rules={
 		(Rule []) {
 			(Rule) { .token_count=1, .tokens=(token_t[]) {term} },
 		},
@@ -37,7 +37,7 @@ Grammar grammar = {.definitions=(Definition []) {
 			(Rule) { .token_count=3, .tokens=(token_t[]) {term, '-', expr} },
 		},
 	} },
-	(Definition) {.rule_count={1, 2}, .rules={
+	[term - start] = (Definition) {.rule_count={1, 2}, .rules={
 		(Rule []) {
 			(Rule) { .token_count=1, .tokens=(token_t[]) {factor} },
 		},
@@ -46,7 +46,7 @@ Grammar grammar = {.definitions=(Definition []) {
 			(Rule) { .token_count=3, .tokens=(token_t[]) {factor, '/', term} },
 		},
 	} },
-	(Definition) {.rule_count={2, 3}, .rules={
+	[factor - start] = (Definition) {.rule_count={2, 3}, .rules={
 		(Rule []) {
 			(Rule) { .token_count=3, .tokens=(token_t[]) {integer, '.', integer} },
 			(Rule) { .token_count=1, .tokens=(token_t[]) {integer} },
@@ -57,7 +57,7 @@ Grammar grammar = {.definitions=(Definition []) {
 			(Rule) { .token_count=3, .tokens=(token_t[]) {'(', expr, ')'} },
 		},
 	} },
-	(Definition) {.rule_count={1, 1}, .rules={
+	[integer - start] = (Definition) {.rule_count={1, 1}, .rules={
 		(Rule []) {
 			(Rule) { .token_count=1, .tokens=(token_t[]) {digit} },
 		},
@@ -65,7 +65,7 @@ Grammar grammar = {.definitions=(Definition []) {
 			(Rule) { .token_count=2, .tokens=(token_t[]) {digit, integer} },
 		},
 	} },
-	(Definition) {.rule_count={10, 0}, .rules={
+	[digit - start] = (Definition) {.rule_count={10, 0}, .rules={
 		(Rule []) {
 			(Rule) { .token_count=1, .tokens=(token_t[]) {'0'} },
 			(Rule) { .token_count=1, .tokens=(token_t[]) {'1'} },
