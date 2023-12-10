@@ -58,10 +58,11 @@ void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth) {
 		token_t token = stack[0]; // get first token
 		if (current_depth > 0 && current_depth < max_depth) stepwise_token_count[current_depth - 1]--; // if not in cheap mode, decrement latest stepwise token count
 		
-		int buffer_len = STACK_LEN - 1; // get buffer length
-		OVERWRITE(stack, stack_ptr, &stack[1], buffer_len); // overrwrite stack with buffer
+		// remove first token from stack
+		int buffer_len = STACK_LEN - 1;
+		OVERWRITE(stack, stack_ptr, &stack[1], buffer_len);
 
-		// if token is terminal append token to output
+		// if token is terminal write to stdout
 		if (token >= 0) {
 			putchar(token);
 			if (current_depth > 0 && current_depth >= max_depth) stepwise_token_count[current_depth - 1]--; // if haven't already, decrement latest stepwise token count
