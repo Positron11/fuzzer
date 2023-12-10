@@ -9,11 +9,9 @@
 #define HIGH_COST 1
 #define RAND_COST rand() % 2
 
-#define BUFFER_LEN (token_count - 1) // (jank, but I'll keep it for now)
-
 typedef size_t depth_t;
 
-void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth, depth_t depth, token_t* tokens, size_t token_count);
+void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth, depth_t depth, token_t token);
 Rule* get_rule(Definition* definition, int cost);
 
 int main(int argc, char *argv[]) {
@@ -29,35 +27,23 @@ int main(int argc, char *argv[]) {
 	int min_depth = argc > 2 ? strtod(argv[2], 0) : 0;
 	int max_depth = argc > 2 ? strtod(argv[argc - 1], 0) : 10;
 	
-	fuzzer(&grammar, min_depth, max_depth, 0, (token_t[]) {start}, 1);
+	fuzzer(&grammar, min_depth, max_depth, 0, start);
 
 	return EXIT_SUCCESS;
 }
 
 // main fuzzer function
-void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth, depth_t current_depth, token_t* tokens, size_t token_count) {
-	token_t token = tokens[0]; // get first token
+void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth, depth_t current_depth, token_t token) {
+	Definition* definition = &grammar->definitions[token - start];
 
-	// if token is terminal print to stdout
-	if (token >= 0) {
-		putchar(token);
-
-	} else {
-		Definition* definition = &grammar->definitions[token - start];
-
-		int rule_cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST); // calculate cost based on depth...
-		rule_cost = definition->rule_count[1] ? rule_cost : LOW_COST; // ...and force low if definition not recursive
-		
-		Rule* rule = get_rule(definition, rule_cost);
-
-		fuzzer(grammar, min_depth, max_depth, current_depth + 1, rule->tokens, rule->token_count); // fuzz the rule's expansion
-	}
+	int rule_cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST); // calculate cost based on depth...
+	rule_cost = definition->rule_count[1] ? rule_cost : LOW_COST; // ...and force low if definition not recursive
 	
-	if (BUFFER_LEN) { // if buffer exists...
-		token_t buffer[BUFFER_LEN];
-		memcpy(buffer, tokens + 1, BUFFER_LEN*sizeof(token_t));
-
-		fuzzer(grammar, min_depth, max_depth, current_depth, buffer, BUFFER_LEN); // ...fuzz the buffer
+	Rule* rule = get_rule(definition, rule_cost);
+	
+	for (size_t i = 0; i < rule->token_count; i++) {
+		if (rule->tokens[i] >= 0) putchar(rule->tokens[i]); // if token is terminal print to stdout
+		else fuzzer(grammar, min_depth, max_depth, current_depth + 1, rule->tokens[i]); // otherwise fuzz token
 	}
 }
 
