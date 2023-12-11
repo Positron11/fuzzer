@@ -7,11 +7,6 @@
 
 #define STACK_LEN stack_ptr - stack // (jank, but I'll keep it for now)
 
-// append function augmenter
-#define OVERWRITE(target, target_ptr, source, len)		\
-	target_ptr = target;								\
-	target_ptr = append(target_ptr, source, len);
-
 typedef size_t depth_t;
 
 void fuzzer(Grammar* grammar, depth_t max_depth);
@@ -53,7 +48,8 @@ void fuzzer(Grammar* grammar, depth_t max_depth) {
 		
 		// remove first token from stack
 		int buffer_len = STACK_LEN - 1;
-		OVERWRITE(stack, stack_ptr, &stack[1], buffer_len);
+		stack_ptr = stack;
+		stack_ptr = append(stack_ptr, &stack[1], buffer_len);
 
 		// if token is terminal write to stdout
 		if (token >= 0) {
