@@ -5,10 +5,6 @@
 
 #include "grammars/arithmetic.h" // change to appropriate compiled grammar
 
-#define LOW_COST 0
-#define HIGH_COST 1
-#define RAND_COST rand() % 2
-
 #define STACK_LEN stack_ptr - stack // (jank, but I'll keep it for now)
 
 // append function augmenter
@@ -18,7 +14,7 @@
 
 typedef size_t depth_t;
 
-void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth);
+void fuzzer(Grammar* grammar, depth_t max_depth);
 Rule* get_rule(Definition* definition, int cost);
 token_t* append(token_t* target_ptr, token_t source[], size_t len);
 token_t* prepend(token_t target[], token_t* target_ptr, token_t source[], size_t target_len, size_t source_len);
@@ -32,17 +28,16 @@ int main(int argc, char *argv[]) {
 	int seed = strtod(argv[1], 0);
 	srand((unsigned) seed); // initialize random
 
-	// set options from command line if possible otherwise set to defaults
-	int min_depth = argc > 2 ? strtod(argv[2], 0) : 0;
-	int max_depth = argc > 2 ? strtod(argv[argc - 1], 0) : 10;
+	// set options from command line arguments
+	int max_depth = argc > 2 ? strtod(argv[2], 0) : 10;
 	
-	fuzzer(&grammar, min_depth, max_depth);
+	fuzzer(&grammar, max_depth);
 
 	return EXIT_SUCCESS;
 }
 
 // main fuzzer function
-void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth) {
+void fuzzer(Grammar* grammar, depth_t max_depth) {
 	token_t* stack = malloc(2097152 * sizeof(token_t));
 	token_t* stack_ptr = stack; // declare chaser pointers for efficient stack modifications
 	*(stack_ptr++) = start; // initialize stack with start token
@@ -71,11 +66,7 @@ void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth) {
 		}
 		
 		Definition* definition = &grammar->definitions[token - start];
-
-		rule_cost = current_depth < min_depth ? HIGH_COST : (current_depth >= max_depth ? LOW_COST : RAND_COST); // calculate cost based on depth...
-		rule_cost = definition->rule_count[1] ? rule_cost : LOW_COST; // ...and force low if definition not recursive
-
-		Rule* rule = get_rule(definition, rule_cost);
+		Rule* rule = get_rule(definition, current_depth >= max_depth);
 
 		if (current_depth < max_depth) stepwise_token_count[current_depth++] = rule->token_count; // if not in cheap mode, append token count to stepwise array
 		else stepwise_token_count[current_depth - 1] += (rule->token_count) - 1; // otherwise if in cheap mode, add to current token count
@@ -85,8 +76,23 @@ void fuzzer(Grammar* grammar, depth_t min_depth, depth_t max_depth) {
 }
 
 // get rule from definition
-Rule* get_rule(Definition* definition, int cost) {
-	return &definition->rules[cost][rand() % (definition->rule_count)[cost]];
+Rule* get_rule(Definition* definition, int cheap) {
+	size_t cheap_count = definition->rule_count[0];
+	size_t exp_count = definition->rule_count[1];
+	
+	// force cheap if no expensive rules
+	if (!exp_count) cheap = 1;
+
+	if (cheap) {
+		return &definition->rules[0][rand() % cheap_count];
+	
+	} else {
+		// choose from cumulative rule set
+		size_t choice = rand() % (cheap_count + exp_count);
+		size_t cost = choice >= cheap_count;
+		if (cost) choice -= cheap_count;
+		return &definition->rules[cost][choice];
+	}
 }
 
 // append to token array

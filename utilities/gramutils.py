@@ -54,21 +54,22 @@ def cheapen(grammar):
 	return new_grammar
 
 
-# filter out non-reprehensible rules
-def upscale(grammar):
-	flagged = set()
-
-	# generate list of flagged rules
-	for key in grammar:
-		for rule in grammar[key]:
-			if f"{key, rule}" not in flagged: 
-				if x := ostracize(rule, key, grammar): flagged.update(x)
+# generate sorted grammar
+def sort(grammar):
+	cheap_grammar = cheapen(grammar)
 
 	new_grammar = dict();	
 	
 	for key in grammar:
-		if filtered_rules := [rule for rule in grammar[key] if f"{key, rule}" in flagged]:
-			new_grammar[key] = filtered_rules
+		new_grammar[key] = list()
+
+		# add cheap rules first...
+		for rule in grammar[key]:
+			if rule in cheap_grammar[key]: new_grammar[key].append(rule)
+
+		# ...and then add expensive rules
+		for rule in grammar[key]:
+			if rule not in cheap_grammar[key]: new_grammar[key].append(rule)
 	
 	return new_grammar
 

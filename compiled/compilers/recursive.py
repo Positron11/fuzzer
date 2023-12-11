@@ -1,20 +1,14 @@
-from utilities.gramutils import cheapen, upscale, byteify, sanitize
+from utilities.gramutils import cheapen, sort, byteify, sanitize
 
 # generate header source
 def gen_header_src(grammar):
 	out = "#ifndef CSLIB_H_INCLUDED\n"					\
 		  "#define CSLIB_H_INCLUDED\n\n"				\
-		  "void fuzz(int seed, int min_depth, int max_depth);\n\n"
-	
-	expensive_grammar = upscale(grammar)
+		  "void fuzz(int seed, int max_depth);\n\n"
 
 	for token in grammar:
-		out += f"void gen_{sanitize(token)}_cheap();\n"
-
-		if token in expensive_grammar: 
-			out += f"void gen_{sanitize(token)}_expensive(int min_depth, int max_depth, int depth);\n"
-		
-		out += f"void gen_{sanitize(token)}_rand(int min_depth, int max_depth, int depth);\n\n"
+		out += f"void gen_{sanitize(token)}_cheap();\n"		
+		out += f"void gen_{sanitize(token)}_rand(int max_depth, int depth);\n\n"
 			   
 	return out + "\n#endif\n"
 
@@ -23,8 +17,7 @@ def gen_header_src(grammar):
 def gen_main_src(grammar, header):	
 	grammars = {
 		"cheap": byteify(cheapen(grammar)),
-		"expensive": byteify(upscale(grammar)),
-		"rand": byteify(grammar)
+		"rand": byteify(sort(grammar))
 	}
 
 	# write tatic source and main fuzzing function
@@ -32,9 +25,9 @@ def gen_main_src(grammar, header):
 		   "#include <stdlib.h>\n"										\
 		   "#include <time.h>\n"										\
 		  f"#include \"{header}.h\"\n\n"								\
-		   "void fuzz(int seed, int min_depth, int max_depth) {\n"		\
+		   "void fuzz(int seed, int max_depth) {\n"		\
 		   "\tsrand((unsigned) seed);\n"								\
-		   "\tgen_start_rand(min_depth, max_depth, 0);\n"				\
+		   "\tgen_start_rand(max_depth, 0);\n"				\
 		   "}\n\n"
 
 	for key in grammar:
@@ -43,23 +36,14 @@ def gen_main_src(grammar, header):
 			except: continue
 			
 			# generate main function wrapper
-			out += f"void gen_{sanitize(key)}_{cost}({'int min_depth, int max_depth, int depth' if cost != 'cheap' else ''}) {{\n"
+			out += f"void gen_{sanitize(key)}_{cost}({'int max_depth, int depth' if cost != 'cheap' else ''}) {{\n"
 			
 			if cost == "rand":
 				# use cheap function if past max depth
 				out +=  "\tif (depth >= max_depth) {\n"			\
 					   f"\t\tgen_{sanitize(key)}_cheap();\n"	\
 						"\t\treturn;\n"							\
-						"\t}"
-
-				# use expensive function (if exists) if below min depth
-				if key in grammars["expensive"]:
-					out +=  " else if (depth < min_depth) {\n"										\
-						   f"\t\tgen_{sanitize(key)}_expensive(min_depth, max_depth, depth);\n"		\
-						    "\t\treturn;\n"															\
-						    "\t}"
-							
-				out += "\n\n"
+						"\t}\n\n"
 
 			# generate random value
 			out += f"\tint val = rand() % {rule_count};\n"
@@ -76,7 +60,7 @@ def gen_main_src(grammar, header):
 					elif cost == "cheap":
 						out += f"\t\tgen_{sanitize(token)}_cheap();\n"
 					else:
-						out += f"\t\tgen_{sanitize(token)}_rand(min_depth, max_depth, depth + 1);\n"
+						out += f"\t\tgen_{sanitize(token)}_rand(max_depth, depth + 1);\n"
 				
 				out +=  "\t\treturn;\n"
 				out += "\t}\n"

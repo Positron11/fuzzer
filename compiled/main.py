@@ -36,9 +36,8 @@ int main(int argc, char const *argv[]) {
 	}
 
 	int seed = strtod(argv[1], 0);
-	int min_depth = argc > 2 ? strtod(argv[2], 0) : 0;
-	int max_depth = argc > 2 ? strtod(argv[argc - 1], 0) : 10;
-	fuzz(seed, min_depth, max_depth);
+	int max_depth = argc > 2 ? strtod(argv[2], 0) : 10;
+	fuzz(seed, max_depth);
 
 	return 0;
 }""", file=f)
