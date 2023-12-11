@@ -6,21 +6,19 @@ def nonterminals(rule):
 	return [token for token in rule if nonterminal(token)]
 
 
-# identify vicious token rings
-def ostracize(rule, key, grammar, visited=None, flagged=[]):
-	if visited is None: visited = [key]
-	nonterms = nonterminals(rule)
+# identify token rings
+def ostracize(grammar, key="<start>", visited=["<start>"], flagged=[]):
+	for rule in grammar[key]:
+		if f"{key, rule}" not in flagged:
+			nonterms = set(nonterminals(rule))
 
-	# if looping back onto expansion path, flag rule
-	if set(nonterms).intersection(set(visited)):
-		flagged.append(f"{key, rule}")
-		return
-		
-	# if rule not already flagged, evaluate continuation pathways
-	for token in nonterms:
-		for rule in grammar[token]:
-			if f"{token, rule}" not in flagged:
-				ostracize(rule, token, grammar, visited + [token], flagged)
+			# if looping back onto expansion path, flag rule
+			if set(nonterms).intersection(set(visited)):
+				flagged.append(f"{key, rule}")
+			
+			else: # otherwise continue down expansion paths 
+				for token in nonterms:
+					ostracize(grammar, token, visited.copy() + [token], flagged)
 
 	# return flagged endpoints
 	return set(flagged)
@@ -38,13 +36,7 @@ def byteify(grammar):
 
 # filter out reprehensible rules
 def cheapen(grammar):
-	flagged = set()
-
-	# generate list of flagged rules
-	for key in grammar:
-		for rule in grammar[key]:
-			if f"{key, rule}" not in flagged: 
-				if x := ostracize(rule, key, grammar): flagged.update(x)
+	flagged = ostracize(grammar)
 
 	new_grammar = dict();	
 	
