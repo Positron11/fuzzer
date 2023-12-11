@@ -61,7 +61,9 @@ void fuzzer(Grammar* grammar, depth_t max_depth) {
 		if (current_depth < max_depth) stepwise_token_count[current_depth++] = rule->token_count; // if not in cheap mode, append token count to stepwise array
 		else stepwise_token_count[current_depth - 1] += (rule->token_count) - 1; // otherwise if in cheap mode, add to current token count
 
-		substitute(stack, rule->tokens, stack_len, rule->token_count); // substitute token with rule in stack 
+		// substitute token with rule in stack 
+		memmove(stack + rule->token_count, stack + 1, stack_len * sizeof(token_t)); // shift stack to make space for rule
+		memcpy(stack, rule->tokens, rule->token_count); // copy rule into created space
 		stack_len += rule->token_count - 1;
 	}
 }
@@ -84,10 +86,4 @@ Rule* get_rule(Definition* definition, int cheap) {
 		if (cost) choice -= cheap_count;
 		return &definition->rules[cost][choice];
 	}
-}
-
-// prepend rule to token array
-void substitute(token_t target[], token_t source[], size_t target_len, size_t source_len) {
-	memmove(target + source_len, target + 1, target_len * sizeof(token_t)); // move existing contents to make space for source
-	memcpy(target, source, source_len); // copy source into created space
 }
