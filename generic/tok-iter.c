@@ -42,8 +42,6 @@ void fuzzer(Grammar* grammar, depth_t max_depth) {
 	token_t* stack_ptr = stack; // declare chaser pointers for efficient stack modifications
 	*(stack_ptr++) = start; // initialize stack with start token
 
-	int rule_cost = 0;
-
 	// depth state variables
 	depth_t stepwise_token_count[128] = {};
 	depth_t current_depth = 0;
