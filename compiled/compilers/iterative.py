@@ -57,19 +57,19 @@ def gen_main_src(grammar, header):
 						"\t}\n\n"
 
 			# generate random value
-			out += f"\tint val = rand() % {rule_count};\n"
+			out += f"\tswitch(rand() % {rule_count}) {{"
 
 			# generate rule choices
 			for i, rule in enumerate(grammars[cost][key]):
-				out += f"\n\tif (val == {i}) {{\n"
+				out += f"\n\t\tcase {i}:\n"
 
 				if len(rule) != 1:
-					out += f"\t\tmemmove(&stack[{len(rule)}], &stack[1], stack_len * sizeof(lambda));\n"
+					out += f"\t\t\tmemmove(&stack[{len(rule)}], &stack[1], stack_len * sizeof(lambda));\n"
 
 				# generate token expressions - write directly to stdout if
 				# terminal, otherwise link to corresponding generator function
 				for i, token in enumerate(rule):
-					out += f"\t\tstack[{i}] = "
+					out += f"\t\t\tstack[{i}] = "
 					
 					if isinstance(token, int):
 						out += f"(lambda) {{.args={{{token}}}, .func=&write}};\n"
@@ -79,12 +79,12 @@ def gen_main_src(grammar, header):
 						out += f"(lambda) {{.args={{max_depth, depth + 1}}, .func=&gen_{sanitize(token)}_rand}};\n"
 				
 				if len(rule) != 1:
-					out += f"\t\tstack_len += {len(rule) - 1};\n"
+					out += f"\t\t\tstack_len += {len(rule) - 1};\n"
 
-				out +=  "\t\treturn;\n"
-				out += "\t}\n"
+				out +=  "\t\t\treturn;\n"
 
-			out += "}\n\n"
+			out += "\t}\n"	\
+				   "}\n\n"
 
 	# manually create write function
 	return out + "void write(int token) {\n"										\

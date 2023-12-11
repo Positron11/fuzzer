@@ -46,25 +46,25 @@ def gen_main_src(grammar, header):
 						"\t}\n\n"
 
 			# generate random value
-			out += f"\tint val = rand() % {rule_count};\n"
+			out += f"\tswitch(rand() % {rule_count}) {{"
 
 			# generate rule choices
 			for i, rule in enumerate(grammars[cost][key]):
-				out += f"\n\tif (val == {i}) {{\n"
+				out += f"\n\t\tcase {i}:\n"
 
 				# generate token expressions - write directly to stdout if
 				# terminal, otherwise link to corresponding generator function
 				for token in rule:
 					if isinstance(token, int):
-						out += f"\t\tputchar({token});\n"
+						out += f"\t\t\tputchar({token});\n"
 					elif cost == "cheap":
-						out += f"\t\tgen_{sanitize(token)}_cheap();\n"
+						out += f"\t\t\tgen_{sanitize(token)}_cheap();\n"
 					else:
-						out += f"\t\tgen_{sanitize(token)}_rand(max_depth, depth + 1);\n"
+						out += f"\t\t\tgen_{sanitize(token)}_rand(max_depth, depth + 1);\n"
 				
-				out +=  "\t\treturn;\n"
-				out += "\t}\n"
+				out +=  "\t\t\treturn;\n"
 
-			out += "}\n\n"
+			out += "\t}\n"	\
+				   "}\n\n"
 
 	return out
