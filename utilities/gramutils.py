@@ -21,7 +21,7 @@ def ostracize(grammar, key="<start>", visited=["<start>"], flagged=[]):
 					ostracize(grammar, token, visited.copy() + [token], flagged)
 
 	# return flagged endpoints
-	return set(flagged)
+	return flagged
 
 
 # replace terminal tokens with ascii codes
