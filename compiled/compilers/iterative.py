@@ -5,10 +5,10 @@ def gen_header_src(grammar):
 	out = "#ifndef CSLIB_H_INCLUDED\n"						\
 		  "#define CSLIB_H_INCLUDED\n\n"					\
 		  "typedef void (*func)();\n\n"						\
-		  "typedef struct lambda {\n"						\
+		  "typedef struct Lambda {\n"						\
 		  "\tint args[2];\n"								\
 		  "\tfunc func;\n"									\
-		  "} lambda;\n\n"									\
+		  "} Lambda;\n\n"									\
 		  "void fuzz(int seed, int max_depth);\n\n"
 
 	for token in grammar:
@@ -32,11 +32,11 @@ def gen_main_src(grammar, header):
 		   "#include <string.h>\n"																\
 		   "#include <time.h>\n"																\
 		  f"#include \"{header}.h\"\n\n"														\
-		   "lambda stack[1024];\n"																\
+		   "Lambda stack[1024];\n"																\
 		   "int stack_len = 1;\n\n"																\
 		   "void fuzz(int seed, int max_depth) {\n"												\
 		   "\tsrand((unsigned) seed);\n\n"														\
-		   "\tstack[0] = (lambda) {.args={max_depth, 0}, .func=&gen_start_rand};\n"				\
+		   "\tstack[0] = (Lambda) {.args={max_depth, 0}, .func=&gen_start_rand};\n"				\
 		   "\twhile (stack_len > 0) stack[0].func(stack[0].args[0], stack[0].args[1]);\n\n"		\
 		   "\treturn;\n"																		\
 		   "}\n\n"
@@ -52,7 +52,7 @@ def gen_main_src(grammar, header):
 			if cost == "rand":
 				# use cheap function if past max depth
 				out +=  "\tif (depth >= max_depth) {\n"																				\
-					   f"\t\tstack[0] = (lambda) {{.args={{}}, .func=&gen_{sanitize(key)}_cheap}};\n"								\
+					   f"\t\tstack[0] = (Lambda) {{.args={{}}, .func=&gen_{sanitize(key)}_cheap}};\n"								\
 						"\t\treturn;\n"																								\
 						"\t}\n\n"
 
@@ -64,7 +64,7 @@ def gen_main_src(grammar, header):
 				out += f"\n\t\tcase {i}:\n"
 
 				if len(rule) != 1:
-					out += f"\t\t\tmemmove(&stack[{len(rule)}], &stack[1], stack_len * sizeof(lambda));\n"
+					out += f"\t\t\tmemmove(&stack[{len(rule)}], &stack[1], stack_len * sizeof(Lambda));\n"
 
 				# generate token expressions - write directly to stdout if
 				# terminal, otherwise link to corresponding generator function
@@ -72,11 +72,11 @@ def gen_main_src(grammar, header):
 					out += f"\t\t\tstack[{i}] = "
 					
 					if isinstance(token, int):
-						out += f"(lambda) {{.args={{{token}}}, .func=&write}};\n"
+						out += f"(Lambda) {{.args={{{token}}}, .func=&write}};\n"
 					elif cost == "cheap":
-						out += f"(lambda) {{.args={{}}, .func=&gen_{sanitize(token)}_cheap}};\n"
+						out += f"(Lambda) {{.args={{}}, .func=&gen_{sanitize(token)}_cheap}};\n"
 					else:
-						out += f"(lambda) {{.args={{max_depth, depth + 1}}, .func=&gen_{sanitize(token)}_rand}};\n"
+						out += f"(Lambda) {{.args={{max_depth, depth + 1}}, .func=&gen_{sanitize(token)}_rand}};\n"
 				
 				if len(rule) != 1:
 					out += f"\t\t\tstack_len += {len(rule) - 1};\n"
@@ -88,7 +88,7 @@ def gen_main_src(grammar, header):
 
 	# manually create write function
 	return out + "void write(int token) {\n"										\
-				 "\tmemmove(&stack[0], &stack[1], stack_len * sizeof(lambda));\n"	\
+				 "\tmemmove(&stack[0], &stack[1], stack_len * sizeof(Lambda));\n"	\
 				 "\tputchar(token);\n"												\
 				 "\tstack_len += -1;\n"												\
 				 "\treturn;\n"														\
