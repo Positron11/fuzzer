@@ -23,9 +23,9 @@ View the source for generic fuzzers in `generic/`. Directory contains two classe
 2. `fuzzer <seed> <min depth> <max depth>`
 3. `fuzzer <seed> <min depth> <max depth> <runs>` 
 
-### Grammar Compilation
+#### Grammar Compilation
 
-For both token fuzzers, a grammar compilation utility is included in `generic/utilities/gcompiler.py`, which takes a JSON grammar as input and prints a compiled header file to `stdout`. Use like so:
+For both generic fuzzers, a grammar compilation utility is included in `generic/utilities/gcompiler.py`, which takes a JSON grammar as input and prints a compiled header file to `stdout`. Use like so:
 
 ```bash
 cd generic/utilities/
