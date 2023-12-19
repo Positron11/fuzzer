@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "grammars/arithmetic.h" // change to appropriate compiled grammar
+#include "grammars/grammar.h"
 
 typedef size_t depth_t;
 

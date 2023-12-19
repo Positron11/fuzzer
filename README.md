@@ -29,12 +29,19 @@ For both token fuzzers, a grammar compilation utility is included in `generic/ut
 
 ```bash
 cd generic/utilities/
-python gcompiler.py path-to-json-grammar > path-to-header-file
+python gcompiler.py path-to-json-grammar > ../grammars/path-to-header-file
 ```
 
-To use this grammar, change the import statement near the beginning of the fuzzer source file (default: `\#include "grammars/arithmetic.h"`). A precompiled grammar has been included in `generic/utilities/grammars/`.
+Writing the grammar to `generic/grammars` is necessary since that's where the header file containing the grammar component structure definitions.
 
-(It might've been more elegant to include the grammar with the `-include` flag but removing the import statement floods my IDE with red lines.)
+To use this grammar, include the grammar with the `-include` flag at compile time. For example: 
+
+```bash
+cd generic/
+gcc -o fuzzer -include grammars/arithmetic.h fuzz-iter.c 
+```
+
+A precompiled arithmetic grammar has been included in `generic/grammars/`.
 
 ### Compiled Fuzzers
 

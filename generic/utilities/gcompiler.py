@@ -2,38 +2,27 @@ import sys
 sys.path.append("../..")
 
 import json
-from utilities.gramutils import cheapen, upscale, byteify, sanitize
+from utilities.gramutils import cheapen, byteify, sanitize
 
 with open(sys.argv[1], "r") as f:
 	grammar = json.load(f)
 
+cheap_grammar = cheapen(grammar)
+expensive_grammar = dict()
+for key in grammar:
+	expensive_grammar[key] = [rule for rule in grammar[key] if rule not in cheap_grammar[key]]
+
 grammars = {
-	"cheap": byteify(cheapen(grammar)),
-	"expensive": byteify(upscale(grammar)),
+	"cheap": byteify(cheap_grammar),
+	"expensive": byteify(expensive_grammar),
 	"rand": byteify(grammar)
 }
 
-out = """#ifndef CSLIB_H_INCLUDED
-#define CSLIB_H_INCLUDED
+out = """#ifndef GRAMMAR_H_INCLUDED
+#define GRAMMAR_H_INCLUDED
 
-#include <stdio.h>
 #include <limits.h>
-
-typedef signed char token_t;
-
-typedef struct Rule {
-	size_t token_count;
-	token_t* tokens;
-} Rule;
-
-typedef struct Definition {
-	size_t rule_count[2];
-	Rule* rules[2]; // [0]: cheap, [1]: costly
-} Definition;
-
-typedef struct Grammar {
-	Definition* definitions;
-} Grammar;\n\n"""
+#include "grammar.h"\n\n"""
 
 out += f"enum nonterminals {{start = SCHAR_MIN, {", ".join([sanitize(token) for token in grammar][1:])}}};\n\n"
 
