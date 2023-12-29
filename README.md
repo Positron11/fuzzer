@@ -38,7 +38,8 @@ To use this grammar, include the grammar with the `-include` flag at compile tim
 
 ```bash
 cd generic/
-gcc -o fuzzer -include grammars/arithmetic.h fuzz-iter.c 
+mkdir build
+gcc -o build/gi-fuzzer -include grammars/arithmetic.h fuzz-iter.c 
 ```
 
 A precompiled arithmetic grammar has been included in `generic/grammars/`.
