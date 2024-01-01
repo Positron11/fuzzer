@@ -36,7 +36,7 @@ void fuzzer(Grammar* grammar, depth_t max_depth) {
 	size_t stack_len = 1;
 
 	// depth state variables
-	depth_t stepwise_token_count[128] = {};
+	depth_t stepwise_token_count[128];
 	depth_t current_depth = 0;
 
 	// while stack not empty...
