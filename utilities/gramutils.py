@@ -1,9 +1,16 @@
+# determine if a rule is nonterminal
 def nonterminal(token):
 	return token[0] == "<" and token[-1] == ">"
 
 
+# get all nonterminals in rule
 def nonterminals(rule):
 	return [token for token in rule if nonterminal(token)]
+
+
+# convert token to valid function name segment
+def sanitize(token):
+	return token[1:-1].replace('-', '_')
 
 
 # identify token rings
@@ -29,7 +36,15 @@ def byteify(grammar):
 	new_grammar = dict()
 	
 	for definition in grammar:
-		new_grammar[definition] = [[token if nonterminal(token) else ord(token) for token in rule] for rule in grammar[definition]]
+		new_grammar[definition] = []
+
+		for rule in grammar[definition]:
+			new_rule = []
+			
+			for token in rule:
+				new_rule += [token] if nonterminal(token) else [ord(c) for c in list(token)]
+
+			new_grammar[definition].append(new_rule)
 
 	return new_grammar
 
@@ -64,8 +79,3 @@ def sort(grammar):
 			if rule not in cheap_grammar[key]: new_grammar[key].append(rule)
 	
 	return new_grammar
-
-
-# convert token to valid function name segment
-def sanitize(token):
-	return token[1:-1].replace('-', '_')
