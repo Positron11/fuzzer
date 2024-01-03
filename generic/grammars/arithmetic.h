@@ -11,16 +11,14 @@ Grammar grammar = {.definitions=(Definition []) {
 		(Rule []) {
 			(Rule) { .token_count=1, .tokens=(token_t[]) {expr} },
 		},
-		(Rule []) {
-		},
 	} },
 	[expr - start] = (Definition) {.rule_count={1, 2}, .rules={
 		(Rule []) {
 			(Rule) { .token_count=1, .tokens=(token_t[]) {term} },
 		},
 		(Rule []) {
-			(Rule) { .token_count=3, .tokens=(token_t[]) {term, '+', expr} },
-			(Rule) { .token_count=3, .tokens=(token_t[]) {term, '-', expr} },
+			(Rule) { .token_count=3, .tokens=(token_t[]) {term, 43, expr} },
+			(Rule) { .token_count=3, .tokens=(token_t[]) {term, 45, expr} },
 		},
 	} },
 	[term - start] = (Definition) {.rule_count={1, 2}, .rules={
@@ -28,19 +26,19 @@ Grammar grammar = {.definitions=(Definition []) {
 			(Rule) { .token_count=1, .tokens=(token_t[]) {factor} },
 		},
 		(Rule []) {
-			(Rule) { .token_count=3, .tokens=(token_t[]) {factor, '*', term} },
-			(Rule) { .token_count=3, .tokens=(token_t[]) {factor, '/', term} },
+			(Rule) { .token_count=3, .tokens=(token_t[]) {factor, 42, term} },
+			(Rule) { .token_count=3, .tokens=(token_t[]) {factor, 47, term} },
 		},
 	} },
 	[factor - start] = (Definition) {.rule_count={2, 3}, .rules={
 		(Rule []) {
-			(Rule) { .token_count=3, .tokens=(token_t[]) {integer, '.', integer} },
+			(Rule) { .token_count=3, .tokens=(token_t[]) {integer, 46, integer} },
 			(Rule) { .token_count=1, .tokens=(token_t[]) {integer} },
 		},
 		(Rule []) {
-			(Rule) { .token_count=2, .tokens=(token_t[]) {'+', factor} },
-			(Rule) { .token_count=2, .tokens=(token_t[]) {'-', factor} },
-			(Rule) { .token_count=3, .tokens=(token_t[]) {'(', expr, ')'} },
+			(Rule) { .token_count=2, .tokens=(token_t[]) {43, factor} },
+			(Rule) { .token_count=2, .tokens=(token_t[]) {45, factor} },
+			(Rule) { .token_count=3, .tokens=(token_t[]) {40, expr, 41} },
 		},
 	} },
 	[integer - start] = (Definition) {.rule_count={1, 1}, .rules={
@@ -53,18 +51,16 @@ Grammar grammar = {.definitions=(Definition []) {
 	} },
 	[digit - start] = (Definition) {.rule_count={10, 0}, .rules={
 		(Rule []) {
-			(Rule) { .token_count=1, .tokens=(token_t[]) {'0'} },
-			(Rule) { .token_count=1, .tokens=(token_t[]) {'1'} },
-			(Rule) { .token_count=1, .tokens=(token_t[]) {'2'} },
-			(Rule) { .token_count=1, .tokens=(token_t[]) {'3'} },
-			(Rule) { .token_count=1, .tokens=(token_t[]) {'4'} },
-			(Rule) { .token_count=1, .tokens=(token_t[]) {'5'} },
-			(Rule) { .token_count=1, .tokens=(token_t[]) {'6'} },
-			(Rule) { .token_count=1, .tokens=(token_t[]) {'7'} },
-			(Rule) { .token_count=1, .tokens=(token_t[]) {'8'} },
-			(Rule) { .token_count=1, .tokens=(token_t[]) {'9'} },
-		},
-		(Rule []) {
+			(Rule) { .token_count=1, .tokens=(token_t[]) {48} },
+			(Rule) { .token_count=1, .tokens=(token_t[]) {49} },
+			(Rule) { .token_count=1, .tokens=(token_t[]) {50} },
+			(Rule) { .token_count=1, .tokens=(token_t[]) {51} },
+			(Rule) { .token_count=1, .tokens=(token_t[]) {52} },
+			(Rule) { .token_count=1, .tokens=(token_t[]) {53} },
+			(Rule) { .token_count=1, .tokens=(token_t[]) {54} },
+			(Rule) { .token_count=1, .tokens=(token_t[]) {55} },
+			(Rule) { .token_count=1, .tokens=(token_t[]) {56} },
+			(Rule) { .token_count=1, .tokens=(token_t[]) {57} },
 		},
 	} },
 } };
