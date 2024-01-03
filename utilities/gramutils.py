@@ -31,6 +31,60 @@ def ostracize(grammar, key="<start>", visited=["<start>"], flagged=[]):
 	return flagged
 
 
+# calculate cost of symbol based on expansions
+def symbol_cost(grammar, symbol, seen, cache):
+	if symbol in seen: return float("inf")
+	expansion_costs = []
+	
+	for rule in grammar.get(symbol, []):
+		if symbol in cache and str(rule) in cache[symbol]:
+			expansion_costs.append(cache[symbol][str(rule)])
+		
+		else:
+			expansion_costs.append(expansion_cost(grammar, rule, seen | {symbol}, cache))
+	
+	return min(expansion_costs, default=0)
+
+
+# calculate cost of expansion
+def expansion_cost(grammar, tokens, seen, cache):
+	return max((symbol_cost(grammar, token, seen, cache) for token in tokens if token in grammar), default=0) + 1
+
+
+# calculate cost for each rule in grammar
+def compute_cost(grammar):
+	rule_cost = {}
+	for k in grammar:
+		rule_cost[k] = {}
+		for rule in grammar[k]:
+			rule_cost[k][str(rule)] = expansion_cost(grammar, rule, set(), rule_cost)
+	return rule_cost
+
+
+# filter out reprehensible rules
+def cheapen(grammar):
+	new_grammar = dict()
+	
+	# remove all flagged rules
+	flagged = ostracize(grammar)
+
+	for key in grammar:
+		new_grammar[key] = [rule for rule in grammar[key] if f"{key, rule}" not in flagged]
+	
+	# re-populate empty keys with minimum cost rules
+	empty_keys = [key for key in new_grammar if len(new_grammar[key]) == 0]
+
+	if empty_keys:
+		costs = compute_cost(grammar)
+
+		for key in empty_keys:	
+			min_cost = min(costs[key].values())
+			cheap_rules = [rule for rule in costs[key] if costs[key][rule] == min_cost]
+			new_grammar[key] = [rule.translate({ord(c): None for c in "['']"}).split(", ") for rule in cheap_rules]
+
+	return new_grammar
+
+
 # replace terminal tokens with ascii codes
 def byteify(grammar):
 	new_grammar = dict()
@@ -46,18 +100,6 @@ def byteify(grammar):
 
 			new_grammar[definition].append(new_rule)
 
-	return new_grammar
-
-
-# filter out reprehensible rules
-def cheapen(grammar):
-	flagged = ostracize(grammar)
-
-	new_grammar = dict();	
-	
-	for key in grammar:
-		new_grammar[key] = [rule for rule in grammar[key] if f"{key, rule}" not in flagged]
-	
 	return new_grammar
 
 
