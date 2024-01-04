@@ -1,7 +1,10 @@
-#ifndef GRAMSTRUCT_H_INCLUDED
-#define GRAMSTRUCT_H_INCLUDED
+#ifndef GSTRUCT_H_INCLUDED
+#define GSTRUCT_H_INCLUDED
 
 #include <stdio.h>
+#include <limits.h>
+
+#define START SCHAR_MIN
 
 typedef signed char token_t;
 
@@ -12,17 +15,11 @@ typedef struct Rule {
 
 typedef struct Definition {
 	size_t rule_count[2];
-	Rule* rules[2]; // [0]: cheap, [1]: costly
+	Rule* rules[2]; // [0]: cheap, [1]: expensive
 } Definition;
 
 typedef struct Grammar {
 	Definition* definitions;
 } Grammar;
-
-// placeholder declarations so fuzzer core compiles independently
-#ifndef GRAMMAR_H_INCLUDED
-Grammar grammar;
-token_t start;
-#endif
 
 #endif

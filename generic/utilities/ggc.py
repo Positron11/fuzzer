@@ -31,9 +31,9 @@ out = f"""#ifndef GRAMMAR_H_INCLUDED
 #define GRAMMAR_H_INCLUDED
 
 #include <limits.h>
-#include "../headers/grammar.h"
+#include "../include/gstruct.h"
 
-enum nonterminals {{start = SCHAR_MIN, {", ".join([sanitize(token) for token in grammar][1:])}}};
+enum nonterminals {{start=START, {", ".join([sanitize(token) for token in grammar][1:])}}};
 
 Grammar grammar = {{.definitions=(Definition []) {{\n"""
 
