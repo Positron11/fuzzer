@@ -47,8 +47,16 @@ void fuzzer(Grammar* grammar, depth_t max_depth) {
 		else stepwise_token_count[current_depth - 1] += (rule->token_count) - 1; // otherwise if in cheap mode, add to current token count
 
 		// substitute token with rule in stack 
-		memmove(stack + rule->token_count, stack + 1, stack_len * sizeof(token_t)); // shift stack to make space for rule
-		memcpy(stack, rule->tokens, rule->token_count * sizeof(token_t)); // copy rule into created space
-		stack_len += rule->token_count - 1;
+		if (rule->token_count == 0) {
+			memmove(stack, stack + 1, --stack_len * sizeof(token_t));
+		
+		} else if (rule->token_count == 1) {
+			stack[0] = rule->tokens[0];
+		
+		} else {
+			memmove(stack + rule->token_count, stack + 1, stack_len * sizeof(token_t)); // shift stack to make space for rule
+			memcpy(stack, rule->tokens, rule->token_count * sizeof(token_t)); // copy rule into created space
+			stack_len += rule->token_count - 1;
+		}
 	}
 }
