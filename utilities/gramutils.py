@@ -54,10 +54,13 @@ def expansion_cost(grammar, tokens, seen, cache):
 # calculate cost for each rule in grammar
 def compute_cost(grammar):
 	rule_cost = {}
+	
 	for k in grammar:
 		rule_cost[k] = {}
+	
 		for rule in grammar[k]:
 			rule_cost[k][str(rule)] = expansion_cost(grammar, rule, set(), rule_cost)
+	
 	return rule_cost
 
 
@@ -89,16 +92,12 @@ def cheapen(grammar):
 def byteify(grammar):
 	new_grammar = dict()
 	
-	for definition in grammar:
-		new_grammar[definition] = []
+	for key in grammar:
+		new_grammar[key] = list()
 
-		for rule in grammar[definition]:
-			new_rule = []
-			
-			for token in rule:
-				new_rule += [token] if nonterminal(token) else [ord(c) for c in list(token)]
-
-			new_grammar[definition].append(new_rule)
+		for rule in grammar[key]:
+			new_rule = [[token] if nonterminal(token) else [ord(c) for c in list(token)] for token in rule]
+			new_grammar[key].append([token for token_list in new_rule for token in token_list])
 
 	return new_grammar
 
