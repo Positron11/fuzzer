@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/fuzzer.h"
-#include "../include/gstruct.h"
-#include "../include/fuzzutils.h"
+#include "fuzzer.h"
+#include "gstruct.h"
+#include "fuzzutils.h"
 
 void fuzzer(Grammar* grammar, depth_t max_depth);
 

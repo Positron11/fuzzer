@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "include/gstruct.h"
-#include "include/fuzzer.h"
+#include "src/gstruct.h"
+#include "src/fuzzer.h"
 
 // placeholder declarations so driver core compiles independently
 #ifndef GRAMMAR_H_INCLUDED
