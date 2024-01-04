@@ -8,9 +8,12 @@ from utilities.gramutils import cheapen, byteify, sanitize
 # load and generate grammar variants
 with open(sys.argv[1], "r") as f:
 	data = json.load(f)
-	grammarstr = json.dumps(data["[grammar]"])
-	grammar = json.loads(grammarstr.replace(data["[start]"], "<start>"))
+	gstring = json.dumps(data["[grammar]"])
 
+	gstring = gstring.replace("[],", "[\"\"],") # populate empty rules
+	gstring = gstring.replace(data["[start]"], "<start>") # normalize start key
+	
+	grammar = json.loads(gstring)
 	cheap_grammar = cheapen(grammar)
 
 	expensive_grammar = dict()

@@ -1,6 +1,6 @@
 # determine if a rule is nonterminal
 def nonterminal(token):
-	return token[0] == "<" and token[-1] == ">"
+	return token[0] == "<" and token[-1] == ">" if token else False
 
 
 # get all nonterminals in rule
@@ -96,7 +96,10 @@ def byteify(grammar):
 		new_grammar[key] = list()
 
 		for rule in grammar[key]:
-			new_rule = [[token] if nonterminal(token) else [ord(c) for c in list(token)] for token in rule]
+			# convert nonterminal strings to list of cahracter ascii codes (null if empty rule/token)
+			new_rule = [[token] if nonterminal(token) else [ord(c) for c in list(token)] if len(token) else [0] for token in rule]
+			
+			# flatten and append token list
 			new_grammar[key].append([token for token_list in new_rule for token in token_list])
 
 	return new_grammar
