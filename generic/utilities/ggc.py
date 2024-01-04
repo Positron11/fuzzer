@@ -1,5 +1,5 @@
 import sys
-sys.path.append("../../")
+sys.path.append("../")
 
 import json
 from utilities.gramutils import cheapen, byteify, sanitize
@@ -7,7 +7,9 @@ from utilities.gramutils import cheapen, byteify, sanitize
 
 # load and generate grammar variants
 with open(sys.argv[1], "r") as f:
-	grammar = json.load(f)
+	data = json.load(f)
+	grammarstr = json.dumps(data["[grammar]"])
+	grammar = json.loads(grammarstr.replace(data["[start]"], "<start>"))
 
 	cheap_grammar = cheapen(grammar)
 
@@ -29,7 +31,7 @@ out = f"""#ifndef GRAMMAR_H_INCLUDED
 #define GRAMMAR_H_INCLUDED
 
 #include <limits.h>
-#include "grammar.h"
+#include "../headers/grammar.h"
 
 enum nonterminals {{start = SCHAR_MIN, {", ".join([sanitize(token) for token in grammar][1:])}}};
 
@@ -52,4 +54,6 @@ for key in grammar:
 
 	out += "\t} },\n"
 
+
+# print compiled grammar source
 print(out + "} };\n\n#endif");

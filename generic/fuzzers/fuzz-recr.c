@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "grammars/grammar.h"
+#include "../headers/grammar.h"
 
 typedef size_t depth_t;
 

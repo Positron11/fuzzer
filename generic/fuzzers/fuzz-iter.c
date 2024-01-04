@@ -3,13 +3,12 @@
 #include <string.h>
 #include <time.h>
 
-#include "grammars/grammar.h"
+#include "../headers/grammar.h"
 
 typedef size_t depth_t;
 
 void fuzzer(Grammar* grammar, depth_t max_depth);
 Rule* get_rule(Definition* definition, int cost);
-void substitute(token_t target[], token_t source[], size_t target_len, size_t source_len);
 
 int main(int argc, char *argv[]) {
 	if (argc <= 1) {
@@ -30,13 +29,13 @@ int main(int argc, char *argv[]) {
 
 // main fuzzer function
 void fuzzer(Grammar* grammar, depth_t max_depth) {
-	token_t* stack = malloc(2097152 * sizeof(token_t));
+	token_t* stack = malloc(32768 * sizeof(token_t));
 	stack[0] = start; // initialize stack with start token
 
 	size_t stack_len = 1;
 
 	// depth state variables
-	depth_t stepwise_token_count[128];
+	depth_t stepwise_token_count[1024];
 	depth_t current_depth = 0;
 
 	// while stack not empty...
@@ -46,7 +45,7 @@ void fuzzer(Grammar* grammar, depth_t max_depth) {
 
 		// if token is terminal write to stdout
 		if (token >= 0) {// get first token
-			memmove(stack, stack + 1, --stack_len); // remove token from stack
+			memmove(stack, stack + 1, --stack_len * sizeof(token_t)); // remove token from stack
 			putchar(token);
 
 			if (current_depth > 0 && current_depth >= max_depth) stepwise_token_count[current_depth - 1]--; // if haven't already, decrement latest stepwise token count
@@ -63,7 +62,7 @@ void fuzzer(Grammar* grammar, depth_t max_depth) {
 
 		// substitute token with rule in stack 
 		memmove(stack + rule->token_count, stack + 1, stack_len * sizeof(token_t)); // shift stack to make space for rule
-		memcpy(stack, rule->tokens, rule->token_count); // copy rule into created space
+		memcpy(stack, rule->tokens, rule->token_count * sizeof(token_t)); // copy rule into created space
 		stack_len += rule->token_count - 1;
 	}
 }

@@ -1,0 +1,9 @@
+antlr4-python3-runtime==4.7.2
+jedi==0.19.1
+packaging==23.2
+parso==0.8.3
+pudb==2023.1
+Pygments==2.17.2
+typing==3.7.4.3
+urwid==2.4.1
+urwid_readline==0.13

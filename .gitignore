@@ -225,3 +225,10 @@ Profiling/
 
 # Bash
 .aliases
+
+# Virtual Environment
+/bin/
+/include/
+/lib/
+/lib64
+/pyvenv.cfg
