@@ -7,12 +7,12 @@ build/_$(grammar).fbjson: build/
 
 iterative: main.py build/ build/_$(grammar).fbjson
 	python main.py i build/_$(grammar).fbjson
-	gcc -o build/ci-fuzzer build/_driver.c build/_core.c
+	gcc -o build/ci_fuzz-$(grammar) build/_driver.c build/_core.c
 	rm build/_*
 
 recursive: main.py build/ build/_$(grammar).fbjson
 	python main.py r build/_$(grammar).fbjson
-	gcc -o build/cr-fuzzer build/_driver.c build/_core.c
+	gcc -o build/cr_fuzz-$(grammar) build/_driver.c build/_core.c
 	rm build/_*
 
 clean:
