@@ -30,7 +30,7 @@ void fuzzer(Grammar* grammar, depth_t max_depth) {
 		if (current_depth > 0 && current_depth < max_depth) stepwise_token_count[current_depth - 1]--; // if not in cheap mode, decrement latest stepwise token count
 
 		// if token is terminal write to stdout
-		if (token >= 0) {// get first token
+		if (token >= 0) {
 			memmove(stack, stack + 1, --stack_len * sizeof(token_t)); // remove token from stack
 			putchar(token);
 
