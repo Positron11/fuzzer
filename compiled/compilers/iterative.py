@@ -21,7 +21,7 @@ void fuzz(int seed, int max_depth);\n\n"""
 		out += f"void gen_{sanitize(token)}_cheap();\n"
 		out += f"void gen_{sanitize(token)}_rand(int max_depth, int depth);\n\n"
 			   
-	return out + "void write(int token);\n\n"		\
+	return out + "void write(int token);\n\n"	\
 				 "#endif\n"
 
 
@@ -63,9 +63,9 @@ void fuzz(int seed, int max_depth) {{
 			
 			if cost == "rand":
 				# use cheap function if past max depth
-				out +=  "\tif (depth >= max_depth) {\n"																				\
-					   f"\t\tstack[0] = (Lambda) {{.args={{}}, .func=&gen_{sanitize(key)}_cheap}};\n"								\
-						"\t\treturn;\n"																								\
+				out +=  "\tif (depth >= max_depth) {\n"													\
+					   f"\t\tstack[0] = (Lambda) {{.args={{}}, .func=&gen_{sanitize(key)}_cheap}};\n"	\
+						"\t\treturn;\n"																	\
 						"\t}\n\n"
 
 			# generate random value
