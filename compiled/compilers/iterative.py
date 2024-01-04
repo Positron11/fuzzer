@@ -1,16 +1,22 @@
 from utilities.gramutils import cheapen, sort, byteify, sanitize
 
+
 # generate header source
 def gen_header_src(grammar):
-	out = "#ifndef CSLIB_H_INCLUDED\n"						\
-		  "#define CSLIB_H_INCLUDED\n\n"					\
-		  "typedef void (*func)();\n\n"						\
-		  "typedef struct Lambda {\n"						\
-		  "\tint args[2];\n"								\
-		  "\tfunc func;\n"									\
-		  "} Lambda;\n\n"									\
-		  "void fuzz(int seed, int max_depth);\n\n"
+	# generate static header source
+	out = """#ifndef CSLIB_H_INCLUDED
+#define CSLIB_H_INCLUDED
 
+typedef void (*func)();
+
+typedef struct Lambda {
+	int args[2];
+	func func;
+} Lambda;
+
+void fuzz(int seed, int max_depth);\n\n"""
+
+	# generate generator function declarations
 	for token in grammar:
 		out += f"void gen_{sanitize(token)}_cheap();\n"
 		out += f"void gen_{sanitize(token)}_rand(int max_depth, int depth);\n\n"
@@ -21,26 +27,32 @@ def gen_header_src(grammar):
 
 # generate compiled fuzzer core source
 def gen_main_src(grammar, header):	
+	cheap_grammar = cheapen(grammar)
+
 	grammars = {
-		"cheap": byteify(cheapen(grammar)),
-		"rand": byteify(sort(grammar))
+		"cheap": byteify(cheap_grammar),
+		"rand": byteify(sort(grammar, cheap_grammar))
 	}
 
-	# write tatic source and main fuzzing function
-	out = "#include <stdio.h>\n"																\
-		   "#include <stdlib.h>\n"																\
-		   "#include <string.h>\n"																\
-		   "#include <time.h>\n"																\
-		  f"#include \"{header}.h\"\n\n"														\
-		   "Lambda stack[1024];\n"																\
-		   "int stack_len = 1;\n\n"																\
-		   "void fuzz(int seed, int max_depth) {\n"												\
-		   "\tsrand((unsigned) seed);\n\n"														\
-		   "\tstack[0] = (Lambda) {.args={max_depth, 0}, .func=&gen_start_rand};\n"				\
-		   "\twhile (stack_len > 0) stack[0].func(stack[0].args[0], stack[0].args[1]);\n\n"		\
-		   "\treturn;\n"																		\
-		   "}\n\n"
+	# generate static source
+	out = f"""#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include \"{header}.h\"
 
+Lambda stack[1024];
+int stack_len = 1;
+
+void fuzz(int seed, int max_depth) {{
+	srand((unsigned) seed);
+	
+	stack[0] = (Lambda) {{.args={{max_depth, 0}}, .func=&gen_start_rand}};
+	while (stack_len > 0) stack[0].func(stack[0].args[0], stack[0].args[1]);
+	
+	return;
+}}\n\n"""
+
+	# generate generator function definitions
 	for key in grammar:
 		for cost in grammars.keys():
 			try: rule_count = len(grammars[cost][key])
@@ -87,8 +99,8 @@ def gen_main_src(grammar, header):
 				   "}\n\n"
 
 	# manually create write function
-	return out + "void write(int token) {\n"										\
-				 "\tmemmove(stack, stack + 1, --stack_len * sizeof(Lambda));\n"	\
-				 "\tputchar(token);\n"												\
-				 "\treturn;\n"														\
-				 "}"
+	return out + """void write(int token) {
+	memmove(stack, stack + 1, --stack_len * sizeof(Lambda));
+	putchar(token);
+	return;
+}"""

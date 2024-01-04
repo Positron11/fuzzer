@@ -104,9 +104,7 @@ def byteify(grammar):
 
 
 # generate sorted grammar
-def sort(grammar):
-	cheap_grammar = cheapen(grammar)
-
+def sort(grammar, cheap_grammar):
 	new_grammar = dict();	
 	
 	for key in grammar:
