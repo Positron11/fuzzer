@@ -4,8 +4,8 @@ from utilities.gramutils import cheapen, sort, byteify, sanitize
 # generate header source
 def gen_header_src(grammar):
 	# generate static header source
-	out = """#ifndef CSLIB_H_INCLUDED
-#define CSLIB_H_INCLUDED
+	out = """#ifndef GRAMMAR_H_INCLUDED
+#define GRAMMAR_H_INCLUDED
 
 void fuzz(int seed, int max_depth);\n\n"""
 
