@@ -64,7 +64,7 @@ def gen_main_src(grammar, header):
 				out += f"\n\t\tcase {i}:\n"
 
 				if len(rule) != 1:
-					out += f"\t\t\tmemmove(&stack[{len(rule)}], &stack[1], stack_len * sizeof(Lambda));\n"
+					out += f"\t\t\tmemmove(stack + {len(rule)}, stack + 1, stack_len * sizeof(Lambda));\n"
 
 				# generate token expressions - write directly to stdout if
 				# terminal, otherwise link to corresponding generator function
@@ -88,8 +88,7 @@ def gen_main_src(grammar, header):
 
 	# manually create write function
 	return out + "void write(int token) {\n"										\
-				 "\tmemmove(&stack[0], &stack[1], stack_len * sizeof(Lambda));\n"	\
+				 "\tmemmove(stack, stack + 1, --stack_len * sizeof(Lambda));\n"	\
 				 "\tputchar(token);\n"												\
-				 "\tstack_len += -1;\n"												\
 				 "\treturn;\n"														\
 				 "}"
