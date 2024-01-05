@@ -1,0 +1,1104 @@
+{
+    "[start]": "<equation>",
+    "[grammar]": {
+        "<equation>": [
+            [
+                "<expression>",
+                "<relop>",
+                "<expression>"
+            ]
+        ],
+        "<expression>": [
+            [
+                "<multiplyingExpression>",
+                "<_expression_re_6>"
+            ]
+        ],
+        "<relop>": [
+            [
+                "<_EQ_sp_>"
+            ],
+            [
+                "<_GT_sp_>"
+            ],
+            [
+                "<_LT_sp_>"
+            ]
+        ],
+        "<multiplyingExpression>": [
+            [
+                "<powExpression>",
+                "<_multiplyingExpression_re_13>"
+            ]
+        ],
+        "<_expression_re_6>": [
+            [
+                "<_expression_STAR_0>"
+            ]
+        ],
+        "<powExpression>": [
+            [
+                "<signedAtom>",
+                "<_powExpression_re_17>"
+            ]
+        ],
+        "<_multiplyingExpression_re_13>": [
+            [
+                "<_multiplyingExpression_STAR_7>"
+            ]
+        ],
+        "<signedAtom>": [
+            [
+                "<_MINUS_sp_>",
+                "<signedAtom>"
+            ],
+            [
+                "<_PLUS_sp_>",
+                "<signedAtom>"
+            ],
+            [
+                "<atom>"
+            ],
+            [
+                "<func_>"
+            ]
+        ],
+        "<_powExpression_re_17>": [
+            [
+                "<_powExpression_STAR_14>"
+            ]
+        ],
+        "<_MINUS_sp_>": [
+            [
+                "<_SKIP>",
+                "<MINUS>"
+            ]
+        ],
+        "<_PLUS_sp_>": [
+            [
+                "<_SKIP>",
+                "<PLUS>"
+            ]
+        ],
+        "<atom>": [
+            [
+                "<_LPAREN_sp_>",
+                "<expression>",
+                "<_RPAREN_sp_>"
+            ],
+            [
+                "<constant>"
+            ],
+            [
+                "<scientific>"
+            ],
+            [
+                "<variable>"
+            ]
+        ],
+        "<func_>": [
+            [
+                "<funcname>",
+                "<_LPAREN_sp_>",
+                "<expression>",
+                "<_func__re_21>",
+                "<_RPAREN_sp_>"
+            ]
+        ],
+        "<_SKIP>": [
+            [],
+            [
+                "<_SKIP>",
+                "<_SKIP>"
+            ],
+            [
+                "<_WS_sp_>"
+            ]
+        ],
+        "<MINUS>": [
+            [
+                "-"
+            ]
+        ],
+        "<_WS_sp_>": [
+            [
+                "<_SKIP>",
+                "<WS>"
+            ]
+        ],
+        "<WS>": [
+            [
+                "<_WS_re_63>"
+            ]
+        ],
+        "<_WS_re_63>": [
+            [
+                "<_WS_PLUS_61>"
+            ]
+        ],
+        "<_WS_PLUS_61>": [
+            [
+                "<_WS_CSET_62>"
+            ],
+            [
+                "<_WS_CSET_62>",
+                "<_WS_PLUS_61>"
+            ]
+        ],
+        "<_WS_CSET_62>": [
+            [
+                "\t"
+            ],
+            [
+                "\n"
+            ],
+            [
+                "\r"
+            ],
+            [
+                " "
+            ]
+        ],
+        "<PLUS>": [
+            [
+                "+"
+            ]
+        ],
+        "<_LPAREN_sp_>": [
+            [
+                "<_SKIP>",
+                "<LPAREN>"
+            ]
+        ],
+        "<_RPAREN_sp_>": [
+            [
+                "<_SKIP>",
+                "<RPAREN>"
+            ]
+        ],
+        "<constant>": [
+            [
+                "<_EULER_sp_>"
+            ],
+            [
+                "<_I_sp_>"
+            ],
+            [
+                "<_PI_sp_>"
+            ]
+        ],
+        "<scientific>": [
+            [
+                "<_SCIENTIFIC_NUMBER_sp_>"
+            ]
+        ],
+        "<variable>": [
+            [
+                "<_VARIABLE_sp_>"
+            ]
+        ],
+        "<LPAREN>": [
+            [
+                "("
+            ]
+        ],
+        "<RPAREN>": [
+            [
+                ")"
+            ]
+        ],
+        "<_EULER_sp_>": [
+            [
+                "<_SKIP>",
+                "<EULER>"
+            ]
+        ],
+        "<_I_sp_>": [
+            [
+                "<_SKIP>",
+                "<I>"
+            ]
+        ],
+        "<_PI_sp_>": [
+            [
+                "<_SKIP>",
+                "<PI>"
+            ]
+        ],
+        "<EULER>": [
+            [
+                "<E2>"
+            ]
+        ],
+        "<E2>": [
+            [
+                "e"
+            ]
+        ],
+        "<I>": [
+            [
+                "i"
+            ]
+        ],
+        "<PI>": [
+            [
+                "pi"
+            ]
+        ],
+        "<_SCIENTIFIC_NUMBER_sp_>": [
+            [
+                "<_SKIP>",
+                "<SCIENTIFIC_NUMBER>"
+            ]
+        ],
+        "<SCIENTIFIC_NUMBER>": [
+            [
+                "<NUMBER>",
+                "<_SCIENTIFIC_NUMBER_re_43>"
+            ]
+        ],
+        "<NUMBER>": [
+            [
+                "<_NUMBER_re_48>",
+                "<_NUMBER_re_56>"
+            ]
+        ],
+        "<_SCIENTIFIC_NUMBER_re_43>": [
+            [
+                "<_SCIENTIFIC_NUMBER_Q_36>"
+            ]
+        ],
+        "<_NUMBER_re_48>": [
+            [
+                "<_NUMBER_PLUS_44>"
+            ]
+        ],
+        "<_NUMBER_re_56>": [
+            [
+                "<_NUMBER_Q_49>"
+            ]
+        ],
+        "<_NUMBER_PLUS_44>": [
+            [
+                "<_NUMBER_OR_45>"
+            ],
+            [
+                "<_NUMBER_OR_45>",
+                "<_NUMBER_PLUS_44>"
+            ]
+        ],
+        "<_NUMBER_OR_45>": [
+            [
+                "<_NUMBER_SEQ_46>"
+            ]
+        ],
+        "<_NUMBER_SEQ_46>": [
+            [
+                "<_NUMBER_CHARRANGE_47>"
+            ]
+        ],
+        "<_NUMBER_CHARRANGE_47>": [
+            [
+                "0"
+            ],
+            [
+                "1"
+            ],
+            [
+                "2"
+            ],
+            [
+                "3"
+            ],
+            [
+                "4"
+            ],
+            [
+                "5"
+            ],
+            [
+                "6"
+            ],
+            [
+                "7"
+            ],
+            [
+                "8"
+            ],
+            [
+                "9"
+            ]
+        ],
+        "<_NUMBER_Q_49>": [
+            [],
+            [
+                "<_NUMBER_OR_50>"
+            ]
+        ],
+        "<_NUMBER_OR_50>": [
+            [
+                "<_NUMBER_SEQ_51>"
+            ]
+        ],
+        "<_NUMBER_SEQ_51>": [
+            [
+                ".",
+                "<_NUMBER_PLUS_52>"
+            ]
+        ],
+        "<_NUMBER_PLUS_52>": [
+            [
+                "<_NUMBER_OR_53>"
+            ],
+            [
+                "<_NUMBER_OR_53>",
+                "<_NUMBER_PLUS_52>"
+            ]
+        ],
+        "<_NUMBER_OR_53>": [
+            [
+                "<_NUMBER_SEQ_54>"
+            ]
+        ],
+        "<_NUMBER_SEQ_54>": [
+            [
+                "<_NUMBER_CHARRANGE_55>"
+            ]
+        ],
+        "<_NUMBER_CHARRANGE_55>": [
+            [
+                "0"
+            ],
+            [
+                "1"
+            ],
+            [
+                "2"
+            ],
+            [
+                "3"
+            ],
+            [
+                "4"
+            ],
+            [
+                "5"
+            ],
+            [
+                "6"
+            ],
+            [
+                "7"
+            ],
+            [
+                "8"
+            ],
+            [
+                "9"
+            ]
+        ],
+        "<_SCIENTIFIC_NUMBER_Q_36>": [
+            [],
+            [
+                "<_SCIENTIFIC_NUMBER_OR_37>"
+            ]
+        ],
+        "<_SCIENTIFIC_NUMBER_OR_37>": [
+            [
+                "<_SCIENTIFIC_NUMBER_SEQ_38>"
+            ]
+        ],
+        "<_SCIENTIFIC_NUMBER_SEQ_38>": [
+            [
+                "<_SCIENTIFIC_NUMBER_OR_39>",
+                "<_SCIENTIFIC_NUMBER_Q_42>",
+                "<_NUMBER_sp_>"
+            ]
+        ],
+        "<_SCIENTIFIC_NUMBER_OR_39>": [
+            [
+                "<_SCIENTIFIC_NUMBER_SEQ_40>"
+            ],
+            [
+                "<_SCIENTIFIC_NUMBER_SEQ_41>"
+            ]
+        ],
+        "<_SCIENTIFIC_NUMBER_Q_42>": [
+            [],
+            [
+                "<_SIGN_sp_>"
+            ]
+        ],
+        "<_NUMBER_sp_>": [
+            [
+                "<_SKIP>",
+                "<NUMBER>"
+            ]
+        ],
+        "<_SCIENTIFIC_NUMBER_SEQ_40>": [
+            [
+                "<_E1_sp_>"
+            ]
+        ],
+        "<_SCIENTIFIC_NUMBER_SEQ_41>": [
+            [
+                "<_E2_sp_>"
+            ]
+        ],
+        "<_E1_sp_>": [
+            [
+                "<_SKIP>",
+                "<E1>"
+            ]
+        ],
+        "<E1>": [
+            [
+                "E"
+            ]
+        ],
+        "<_E2_sp_>": [
+            [
+                "<_SKIP>",
+                "<E2>"
+            ]
+        ],
+        "<_SIGN_sp_>": [
+            [
+                "<_SKIP>",
+                "<SIGN>"
+            ]
+        ],
+        "<SIGN>": [
+            [
+                "<_SIGN_re_60>"
+            ]
+        ],
+        "<_SIGN_re_60>": [
+            [
+                "<_SIGN_OR_57>"
+            ]
+        ],
+        "<_SIGN_OR_57>": [
+            [
+                "<_SIGN_SEQ_58>"
+            ],
+            [
+                "<_SIGN_SEQ_59>"
+            ]
+        ],
+        "<_SIGN_SEQ_58>": [
+            [
+                "+"
+            ]
+        ],
+        "<_SIGN_SEQ_59>": [
+            [
+                "-"
+            ]
+        ],
+        "<_VARIABLE_sp_>": [
+            [
+                "<_SKIP>",
+                "<VARIABLE>"
+            ]
+        ],
+        "<VARIABLE>": [
+            [
+                "<VALID_ID_START>",
+                "<_VARIABLE_re_23>"
+            ]
+        ],
+        "<VALID_ID_START>": [
+            [
+                "<_VALID_ID_START_re_27>"
+            ],
+            [
+                "<_VALID_ID_START_re_31>"
+            ],
+            [
+                "_"
+            ]
+        ],
+        "<_VARIABLE_re_23>": [
+            [
+                "<_VARIABLE_STAR_22>"
+            ]
+        ],
+        "<_VALID_ID_START_re_27>": [
+            [
+                "<_VALID_ID_START_OR_24>"
+            ]
+        ],
+        "<_VALID_ID_START_re_31>": [
+            [
+                "<_VALID_ID_START_OR_28>"
+            ]
+        ],
+        "<_VALID_ID_START_OR_24>": [
+            [
+                "<_VALID_ID_START_SEQ_25>"
+            ]
+        ],
+        "<_VALID_ID_START_SEQ_25>": [
+            [
+                "<_VALID_ID_START_CHARRANGE_26>"
+            ]
+        ],
+        "<_VALID_ID_START_CHARRANGE_26>": [
+            [
+                "a"
+            ],
+            [
+                "b"
+            ],
+            [
+                "c"
+            ],
+            [
+                "d"
+            ],
+            [
+                "e"
+            ],
+            [
+                "f"
+            ],
+            [
+                "g"
+            ],
+            [
+                "h"
+            ],
+            [
+                "i"
+            ],
+            [
+                "j"
+            ],
+            [
+                "k"
+            ],
+            [
+                "l"
+            ],
+            [
+                "m"
+            ],
+            [
+                "n"
+            ],
+            [
+                "o"
+            ],
+            [
+                "p"
+            ],
+            [
+                "q"
+            ],
+            [
+                "r"
+            ],
+            [
+                "s"
+            ],
+            [
+                "t"
+            ],
+            [
+                "u"
+            ],
+            [
+                "v"
+            ],
+            [
+                "w"
+            ],
+            [
+                "x"
+            ],
+            [
+                "y"
+            ],
+            [
+                "z"
+            ]
+        ],
+        "<_VALID_ID_START_OR_28>": [
+            [
+                "<_VALID_ID_START_SEQ_29>"
+            ]
+        ],
+        "<_VALID_ID_START_SEQ_29>": [
+            [
+                "<_VALID_ID_START_CHARRANGE_30>"
+            ]
+        ],
+        "<_VALID_ID_START_CHARRANGE_30>": [
+            [
+                "A"
+            ],
+            [
+                "B"
+            ],
+            [
+                "C"
+            ],
+            [
+                "D"
+            ],
+            [
+                "E"
+            ],
+            [
+                "F"
+            ],
+            [
+                "G"
+            ],
+            [
+                "H"
+            ],
+            [
+                "I"
+            ],
+            [
+                "J"
+            ],
+            [
+                "K"
+            ],
+            [
+                "L"
+            ],
+            [
+                "M"
+            ],
+            [
+                "N"
+            ],
+            [
+                "O"
+            ],
+            [
+                "P"
+            ],
+            [
+                "Q"
+            ],
+            [
+                "R"
+            ],
+            [
+                "S"
+            ],
+            [
+                "T"
+            ],
+            [
+                "U"
+            ],
+            [
+                "V"
+            ],
+            [
+                "W"
+            ],
+            [
+                "X"
+            ],
+            [
+                "Y"
+            ],
+            [
+                "Z"
+            ]
+        ],
+        "<_VARIABLE_STAR_22>": [
+            [],
+            [
+                "<_VALID_ID_CHAR_sp_>",
+                "<_VARIABLE_STAR_22>"
+            ]
+        ],
+        "<_VALID_ID_CHAR_sp_>": [
+            [
+                "<_SKIP>",
+                "<VALID_ID_CHAR>"
+            ]
+        ],
+        "<VALID_ID_CHAR>": [
+            [
+                "<VALID_ID_START>"
+            ],
+            [
+                "<_VALID_ID_CHAR_re_35>"
+            ]
+        ],
+        "<_VALID_ID_CHAR_re_35>": [
+            [
+                "<_VALID_ID_CHAR_OR_32>"
+            ]
+        ],
+        "<_VALID_ID_CHAR_OR_32>": [
+            [
+                "<_VALID_ID_CHAR_SEQ_33>"
+            ]
+        ],
+        "<_VALID_ID_CHAR_SEQ_33>": [
+            [
+                "<_VALID_ID_CHAR_CHARRANGE_34>"
+            ]
+        ],
+        "<_VALID_ID_CHAR_CHARRANGE_34>": [
+            [
+                "0"
+            ],
+            [
+                "1"
+            ],
+            [
+                "2"
+            ],
+            [
+                "3"
+            ],
+            [
+                "4"
+            ],
+            [
+                "5"
+            ],
+            [
+                "6"
+            ],
+            [
+                "7"
+            ],
+            [
+                "8"
+            ],
+            [
+                "9"
+            ]
+        ],
+        "<funcname>": [
+            [
+                "<_ACOS_sp_>"
+            ],
+            [
+                "<_ASIN_sp_>"
+            ],
+            [
+                "<_ATAN_sp_>"
+            ],
+            [
+                "<_COS_sp_>"
+            ],
+            [
+                "<_LN_sp_>"
+            ],
+            [
+                "<_LOG_sp_>"
+            ],
+            [
+                "<_SIN_sp_>"
+            ],
+            [
+                "<_SQRT_sp_>"
+            ],
+            [
+                "<_TAN_sp_>"
+            ]
+        ],
+        "<_func__re_21>": [
+            [
+                "<_func__STAR_18>"
+            ]
+        ],
+        "<_ACOS_sp_>": [
+            [
+                "<_SKIP>",
+                "<ACOS>"
+            ]
+        ],
+        "<_ASIN_sp_>": [
+            [
+                "<_SKIP>",
+                "<ASIN>"
+            ]
+        ],
+        "<_ATAN_sp_>": [
+            [
+                "<_SKIP>",
+                "<ATAN>"
+            ]
+        ],
+        "<_COS_sp_>": [
+            [
+                "<_SKIP>",
+                "<COS>"
+            ]
+        ],
+        "<_LN_sp_>": [
+            [
+                "<_SKIP>",
+                "<LN>"
+            ]
+        ],
+        "<_LOG_sp_>": [
+            [
+                "<_SKIP>",
+                "<LOG>"
+            ]
+        ],
+        "<_SIN_sp_>": [
+            [
+                "<_SKIP>",
+                "<SIN>"
+            ]
+        ],
+        "<_SQRT_sp_>": [
+            [
+                "<_SKIP>",
+                "<SQRT>"
+            ]
+        ],
+        "<_TAN_sp_>": [
+            [
+                "<_SKIP>",
+                "<TAN>"
+            ]
+        ],
+        "<ACOS>": [
+            [
+                "acos"
+            ]
+        ],
+        "<ASIN>": [
+            [
+                "asin"
+            ]
+        ],
+        "<ATAN>": [
+            [
+                "atan"
+            ]
+        ],
+        "<COS>": [
+            [
+                "cos"
+            ]
+        ],
+        "<LN>": [
+            [
+                "ln"
+            ]
+        ],
+        "<LOG>": [
+            [
+                "log"
+            ]
+        ],
+        "<SIN>": [
+            [
+                "sin"
+            ]
+        ],
+        "<SQRT>": [
+            [
+                "sqrt"
+            ]
+        ],
+        "<TAN>": [
+            [
+                "tan"
+            ]
+        ],
+        "<_func__STAR_18>": [
+            [],
+            [
+                "<_func__OR_19>",
+                "<_func__STAR_18>"
+            ]
+        ],
+        "<_func__OR_19>": [
+            [
+                "<_func__SEQ_20>"
+            ]
+        ],
+        "<_func__SEQ_20>": [
+            [
+                "<_COMMA_sp_>",
+                "<expression>"
+            ]
+        ],
+        "<_COMMA_sp_>": [
+            [
+                "<_SKIP>",
+                "<COMMA>"
+            ]
+        ],
+        "<COMMA>": [
+            [
+                ","
+            ]
+        ],
+        "<_powExpression_STAR_14>": [
+            [],
+            [
+                "<_powExpression_OR_15>",
+                "<_powExpression_STAR_14>"
+            ]
+        ],
+        "<_powExpression_OR_15>": [
+            [
+                "<_powExpression_SEQ_16>"
+            ]
+        ],
+        "<_powExpression_SEQ_16>": [
+            [
+                "<_POW_sp_>",
+                "<signedAtom>"
+            ]
+        ],
+        "<_POW_sp_>": [
+            [
+                "<_SKIP>",
+                "<POW>"
+            ]
+        ],
+        "<POW>": [
+            [
+                "^"
+            ]
+        ],
+        "<_multiplyingExpression_STAR_7>": [
+            [],
+            [
+                "<_multiplyingExpression_OR_8>",
+                "<_multiplyingExpression_STAR_7>"
+            ]
+        ],
+        "<_multiplyingExpression_OR_8>": [
+            [
+                "<_multiplyingExpression_SEQ_9>"
+            ]
+        ],
+        "<_multiplyingExpression_SEQ_9>": [
+            [
+                "<_multiplyingExpression_OR_10>",
+                "<powExpression>"
+            ]
+        ],
+        "<_multiplyingExpression_OR_10>": [
+            [
+                "<_multiplyingExpression_SEQ_11>"
+            ],
+            [
+                "<_multiplyingExpression_SEQ_12>"
+            ]
+        ],
+        "<_multiplyingExpression_SEQ_11>": [
+            [
+                "<_TIMES_sp_>"
+            ]
+        ],
+        "<_multiplyingExpression_SEQ_12>": [
+            [
+                "<_DIV_sp_>"
+            ]
+        ],
+        "<_TIMES_sp_>": [
+            [
+                "<_SKIP>",
+                "<TIMES>"
+            ]
+        ],
+        "<TIMES>": [
+            [
+                "*"
+            ]
+        ],
+        "<_DIV_sp_>": [
+            [
+                "<_SKIP>",
+                "<DIV>"
+            ]
+        ],
+        "<DIV>": [
+            [
+                "/"
+            ]
+        ],
+        "<_expression_STAR_0>": [
+            [],
+            [
+                "<_expression_OR_1>",
+                "<_expression_STAR_0>"
+            ]
+        ],
+        "<_expression_OR_1>": [
+            [
+                "<_expression_SEQ_2>"
+            ]
+        ],
+        "<_expression_SEQ_2>": [
+            [
+                "<_expression_OR_3>",
+                "<multiplyingExpression>"
+            ]
+        ],
+        "<_expression_OR_3>": [
+            [
+                "<_expression_SEQ_4>"
+            ],
+            [
+                "<_expression_SEQ_5>"
+            ]
+        ],
+        "<_expression_SEQ_4>": [
+            [
+                "<_PLUS_sp_>"
+            ]
+        ],
+        "<_expression_SEQ_5>": [
+            [
+                "<_MINUS_sp_>"
+            ]
+        ],
+        "<_EQ_sp_>": [
+            [
+                "<_SKIP>",
+                "<EQ>"
+            ]
+        ],
+        "<_GT_sp_>": [
+            [
+                "<_SKIP>",
+                "<GT>"
+            ]
+        ],
+        "<_LT_sp_>": [
+            [
+                "<_SKIP>",
+                "<LT>"
+            ]
+        ],
+        "<EQ>": [
+            [
+                "="
+            ]
+        ],
+        "<GT>": [
+            [
+                ">"
+            ]
+        ],
+        "<LT>": [
+            [
+                "<"
+            ]
+        ]
+    }
+}
