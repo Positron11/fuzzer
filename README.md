@@ -15,12 +15,14 @@ This repository contains a collection of simple depth-limited grammar fuzzers im
 A makefile is profided in each class's directory, which builds to a `build/` directory in the class subdirectory. General compilation is:
 
 ```bash
-make [iterative|recursive] grammar=tinyc
+make [iterative|recursive] grammar=[name]
 ```
 
 Intermediate source files (prefixed with `_`) are removed after each build, comment out `rm build/_*` in the makefile to preserve. See makefile contents for more detail. 
 
-Grammars are sourced from the `grammars/` directory in the base directory. Grammars are expected to be provided in the ANTLR `.g4` format. Examples can be found at https://github.com/antlr/grammars-v4/.
+Grammars are sourced from the `grammars/` directory in the base directory. Grammars are expected to be provided in the `.json` format - see provided examples for details. 
+
+See https://github.com/antlr/grammars-v4/ for conversion tools from ANTLR grammars to the `.json` format used here.
 
 ## Usage
 
@@ -32,4 +34,4 @@ gi_fuzz-tinyc 7 128
 
 ## Credits
 
-The `tojson.py` and `ebnftosimple.py` utilities, and the `compute_cost()` method (and all its dependencies) in `gramutils.py` are the work of https://github.com/vrthra/.
+The `compute_cost()` method (and all its dependencies) in `gramutils.py` are the work of https://github.com/vrthra/.
