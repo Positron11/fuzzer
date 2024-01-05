@@ -20,7 +20,7 @@ make [iterative|recursive] grammar=tinyc
 
 Intermediate source files (prefixed with `_`) are removed after each build, comment out `rm build/_*` in the makefile to preserve. See makefile contents for more detail. 
 
-Grammars are sourced from the `grammars/` directory in the base directory. Grammars are expected to be provided in the ANTRL `.g4` format. Examples can be found at https://github.com/antlr/grammars-v4/.
+Grammars are sourced from the `grammars/` directory in the base directory. Grammars are expected to be provided in the ANTLR `.g4` format. Examples can be found at https://github.com/antlr/grammars-v4/.
 
 ## Usage
 
