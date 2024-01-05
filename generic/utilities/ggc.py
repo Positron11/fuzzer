@@ -1,26 +1,18 @@
 import sys
 sys.path.append("../")
 
-import json
-from utilities.gramutils import cheapen, byteify, sanitize
+from utilities.gramutils import load_grammar, cheapen, byteify, sanitize
 
 
 # load and generate grammar variants
 with open(sys.argv[1], "r") as f:
-	data = json.load(f)
-	gstring = json.dumps(data["[grammar]"])
-
-	gstring = gstring.replace("[],", "[\"\"],") # populate empty rules
-	gstring = gstring.replace(data["[start]"], "<start>") # normalize start key
+	grammar = load_grammar(f)
 	
-	grammar = json.loads(gstring)
 	cheap_grammar = cheapen(grammar)
 
 	expensive_grammar = dict()
 	for key in grammar:
-		rules = [rule for rule in grammar[key] if rule not in cheap_grammar[key]]
-
-		if len(rules):
+		if len(rules := [rule for rule in grammar[key] if rule not in cheap_grammar[key]]):
 			expensive_grammar[key] = rules
 
 	subgrammars = {

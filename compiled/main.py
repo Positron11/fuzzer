@@ -1,7 +1,8 @@
 import sys
-import json
 
 sys.path.append("../")
+
+from utilities.gramutils import load_grammar
 
 import compilers.iterative as iter_comp
 import compilers.recursive as recr_comp
@@ -17,9 +18,7 @@ elif sys.argv[1] == "r":
 
 # load grammar
 with open(sys.argv[2], "r") as f:
-	data = json.load(f)
-	grammarstr = json.dumps(data["[grammar]"])
-	grammar = json.loads(grammarstr.replace(data["[start]"], "<start>"))
+	grammar = load_grammar(f)
 
 
 # generate header

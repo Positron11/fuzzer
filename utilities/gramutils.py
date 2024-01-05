@@ -1,3 +1,17 @@
+import json
+
+
+# generate grammar from input file
+def load_grammar(f):
+	data = json.load(f)
+	gstring = json.dumps(data["[grammar]"])
+
+	gstring = gstring.replace("[],", "[\"\"],") # populate empty rules
+	gstring = gstring.replace(data["[start]"], "<start>") # normalize start key
+
+	return json.loads(gstring)
+
+
 # determine if a rule is nonterminal
 def nonterminal(token):
 	return token[0] == "<" and token[-1] == ">" if token else False
