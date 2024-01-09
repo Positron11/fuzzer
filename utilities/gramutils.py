@@ -6,7 +6,6 @@ def load_grammar(f):
 	data = json.load(f)
 	gstring = json.dumps(data["[grammar]"])
 
-	gstring = gstring.replace("[],", "[\"\"],") # populate empty rules
 	gstring = gstring.replace(data["[start]"], "<start>") # normalize start key
 
 	return json.loads(gstring)
@@ -14,7 +13,7 @@ def load_grammar(f):
 
 # determine if a rule is nonterminal
 def nonterminal(token):
-	return token[0] == "<" and token[-1] == ">" if token else False
+	return token[0] == "<" and token[-1] == ">"
 
 
 # get all nonterminals in rule
