@@ -20,7 +20,7 @@ make [iterative|recursive] grammar=[name]
 
 Intermediate source files (prefixed with `_`) are removed after each build, comment out `rm build/_*` in the makefile to preserve. See makefile contents for more detail. 
 
-Grammars are sourced from the `grammars/` directory in the base directory. Grammars are expected to be provided in the `.json` format - see provided examples for details. 
+Grammars are sourced from the [`grammars/`](https://github.com/Positron11/fuzzer/tree/master/grammars) directory in the base directory. Grammars are expected to be provided in the `.json` format - see provided examples for details. 
 
 See https://github.com/antlr/grammars-v4/ for conversion tools from ANTLR grammars to the `.json` format used here.
 
@@ -34,4 +34,4 @@ gi_fuzz-tinyc 7 128
 
 ## Credits
 
-The `compute_cost()` method (and all its dependencies) in `gramutils.py` are the work of https://github.com/vrthra/.
+The [`compute_cost()`](https://github.com/Positron11/fuzzer/blob/master/utilities/gramutils.py#L68) method (and all its dependencies) in [`gramutils.py`](https://github.com/Positron11/fuzzer/blob/master/utilities/gramutils.py) are the work of https://github.com/vrthra/.
