@@ -232,3 +232,8 @@ Profiling/
 /lib/
 /lib64
 /pyvenv.cfg
+
+# Latex
+!docs/build/
+*.bbl
+*.synctex.gz
