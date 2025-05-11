@@ -9,7 +9,7 @@ build/:
 
 build/c%_fuzz-$(grammar): main.py build/
 	python main.py $* ../grammars/$(grammar).json
-	gcc -o build/c$*_fuzz-$(grammar) build/_driver.c build/_core.c
+	gcc -std=gnu89 -o build/c$*_fuzz-$(grammar) build/_driver.c build/_core.c
 	rm build/_*
 
 clean:
