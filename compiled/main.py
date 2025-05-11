@@ -2,7 +2,7 @@ import sys
 
 sys.path.append("../")
 
-from utilities.gramutils import load_grammar
+from utils.gramutils import load_grammar
 
 import compilers.iterative as iter_comp
 import compilers.recursive as recr_comp
