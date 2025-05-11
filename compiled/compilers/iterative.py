@@ -1,4 +1,4 @@
-from utilities.gramutils import cheapen, sort, byteify, sanitize
+from utils.gramutils import cheapen, sort, byteify, sanitize
 
 
 # generate header source

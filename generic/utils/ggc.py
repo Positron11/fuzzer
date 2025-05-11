@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../")
 
-from utilities.gramutils import load_grammar, cheapen, byteify, sanitize
+from utils.gramutils import load_grammar, cheapen, byteify, sanitize
 
 
 # load and generate grammar variants

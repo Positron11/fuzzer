@@ -94,9 +94,13 @@ def cheapen(grammar):
 		costs = compute_cost(grammar)
 
 		for key in empty_keys:	
-			min_cost = min(costs[key].values())
-			cheap_rules = [rule for rule in costs[key] if costs[key][rule] == min_cost]
-			new_grammar[key] = [rule.translate({ord(c): None for c in "['']"}).split(", ") for rule in cheap_rules]
+			try:
+				min_cost = min(costs[key].values())
+				cheap_rules = [rule for rule in costs[key] if costs[key][rule] == min_cost]
+				new_grammar[key] = [rule.translate({ord(c): None for c in "['']"}).split(", ") for rule in cheap_rules]
+			
+			except:
+				new_grammar[key] = [""]
 
 	return new_grammar
 
