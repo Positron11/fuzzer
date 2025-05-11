@@ -12,7 +12,7 @@ This repository contains a collection of simple depth-limited grammar fuzzers im
 
 ## Compilation
 
-A makefile is profided in each class's directory, which builds to a `build/` directory in the class subdirectory. General compilation is:
+A makefile is provided in each class's directory, which builds to a `build/` directory in the class subdirectory. General compilation is:
 
 ```bash
 make [iterative|recursive] grammar=[name]
