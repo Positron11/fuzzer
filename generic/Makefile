@@ -8,7 +8,7 @@ build/:
 	mkdir build
 
 build/_$(grammar).h: build/
-	python utils/ggc.py ../grammars/$(grammar).json > $@
+	python utils/ggc.py ../grammars/json/$(grammar).json > $@
 
 build/_driver.o build/_fuzzutils.o: build/ build/_$(grammar).h
 	gcc -c src/fuzzutils.c -o build/_fuzzutils.o
