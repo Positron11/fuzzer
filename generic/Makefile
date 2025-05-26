@@ -1,5 +1,5 @@
 help:
-	@echo "Usage: make [iterative|recursive] grammar=[name]"
+	@printf "\033[1mUsage:\033[0m make <iterative|recursive> grammar=<name>\n"
 
 iterative: build/gi_fuzz-$(grammar)
 recursive: build/gr_fuzz-$(grammar)
